@@ -17,7 +17,7 @@ Release 3 не начат. Главная, Leads и Genplan в рамках Rele
 - Typed/cache-aware Settings Foundation.
 - Раздельные admin/public assets, Vite/Tailwind, storage и базовые тесты.
 - Исходная проверка Release 0: 14 tests / 67 assertions.
-- Commit hash отсутствует: репозиторий пока не содержит первого коммита.
+- Release 0–2 baseline commit: `974b360afc459e3760486835fcf71ec9a614426c` (`chore: establish RelaxLand baseline through Release 2`).
 
 ### Release 1 — Shared Frontend + Simple Pages
 
@@ -177,7 +177,7 @@ Release 1 не добавлял новые permissions. Используются
 - Контакты, координаты, route links и юридические документы должны быть заполнены фактическими данными через Filament.
 - Pixel-perfect сверка и подключение утверждённых изображений отложены до получения исходных макетов/assets.
 - Полноценная responsive image optimization pipeline не входит в Release 2; media хранятся через Laravel Storage с MIME/size validation и alt в article blocks.
-- Git-история всё ещё не содержит первого коммита; все файлы видны как untracked.
+- Защищённый Git baseline Release 0–2 создан; `.env`, dependencies, production build и сгенерированные Filament assets исключены из истории.
 
 ## Tests
 
@@ -196,6 +196,7 @@ Release 1 не добавлял новые permissions. Используются
 
 - `composer validate --strict` — PASS.
 - `composer audit --locked` — PASS, advisories отсутствуют.
+- При повторной baseline-проверке 2026-08-11 endpoint Packagist security-advisories временно отвечал timeout/502; `composer.lock` после последнего успешного строгого аудита не изменялся, локальный `--ignore-unreachable` не выявил advisories.
 - `npm audit --audit-level=moderate` — PASS, 0 vulnerabilities.
 - `php artisan test` — PASS, 35 tests / 180 assertions.
 - `php artisan migrate:fresh --seed` — PASS на SQLite.
