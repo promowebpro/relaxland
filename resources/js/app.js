@@ -55,3 +55,41 @@ if (menuToggle && mobileMenu) {
         }
     });
 }
+
+document.querySelectorAll('[data-season-tabs]').forEach((tabs) => {
+    const buttons = [...tabs.querySelectorAll('[data-season-tab]')];
+    const panels = [...tabs.querySelectorAll('[data-season-panel]')];
+
+    const activate = (index, moveFocus = false) => {
+        buttons.forEach((button, buttonIndex) => {
+            const active = buttonIndex === index;
+            button.setAttribute('aria-selected', active ? 'true' : 'false');
+            button.tabIndex = active ? 0 : -1;
+
+            if (active && moveFocus) {
+                button.focus();
+            }
+        });
+
+        panels.forEach((panel, panelIndex) => {
+            panel.hidden = panelIndex !== index;
+        });
+    };
+
+    buttons.forEach((button, index) => {
+        button.addEventListener('click', () => activate(index));
+        button.addEventListener('keydown', (event) => {
+            let nextIndex = index;
+
+            if (event.key === 'ArrowRight') nextIndex = (index + 1) % buttons.length;
+            if (event.key === 'ArrowLeft') nextIndex = (index - 1 + buttons.length) % buttons.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = buttons.length - 1;
+
+            if (nextIndex !== index) {
+                event.preventDefault();
+                activate(nextIndex, true);
+            }
+        });
+    });
+});

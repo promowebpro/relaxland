@@ -5,7 +5,7 @@ use App\Http\Controllers\LegalDocumentController;
 use App\Http\Controllers\PublicPageController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [PublicPageController::class, 'contacts'])->name('home');
+Route::get('/', [PublicPageController::class, 'home'])->name('home');
 
 Route::get('/contacts', [PublicPageController::class, 'contacts'])->name('contacts');
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');

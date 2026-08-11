@@ -2,9 +2,9 @@
 
 ## Current Release
 
-Release 2 — Blog: **READY**.
+Release 3 — Main Page: **IMPLEMENTED; browser visual QA pending**.
 
-Release 3 не начат. Главная, Leads и Genplan в рамках Release 2 не реализовывались.
+Главная, Home content editor и Stories реализованы. Leads и интерактивный Genplan не начинались. Встроенный браузер текущего окружения заблокировал localhost-навигацию своей URL policy, поэтому визуальный прогон Release 3 на заданных ширинах остаётся обязательным перед production/макетной приёмкой.
 
 ## Completed Releases
 
@@ -40,6 +40,19 @@ Release 3 не начат. Главная, Leads и Genplan в рамках Rele
 - Добавлены Filament resources категорий и статей с server-side publication controls.
 - Публичный Blog проверен в браузере на 360, 390, 768, 1024, 1280 и 1440 px.
 - Итоговая проверка: 35 tests / 180 assertions.
+
+### Release 3 — Main Page
+
+- Дата: 2026-08-11.
+- Корневой маршрут заменён настоящей SSR-главной с фиксированной композицией Hero, benefits, atmosphere, life scenarios, care, seasons, CTA, static genplan preview, purchase options, Stories, visit, developer и Blog preview.
+- Добавлен singleton `HomePage`: отдельные именованные поля и пять ограниченных повторяемых JSON-коллекций; универсальный page builder и raw JSON UI не создавались.
+- Добавлена самостоятельная сущность `Story`, Filament CRUD, сортировка, active visibility и server-side защита публикации через существующие content permissions.
+- Добавлена Filament page `/admin/home` с тематическими sections/repeaters, media MIME/size validation и SEO/publication fields.
+- Hero и коллекции используют responsive `<picture>`, eager loading только для hero и lazy loading ниже fold; при отсутствии утверждённых media показываются контролируемые CSS placeholders.
+- Seasons работают как доступные tabs с ArrowLeft/ArrowRight/Home/End, SSR first state и reduced-motion support.
+- Settings и Blog переиспользуются без дублирования; Genplan остаётся статичным preview с disabled CTA, Leads отсутствуют.
+- Итоговая автоматическая проверка: 44 tests / 231 assertions.
+- Release 3 functional commit: будет записан отдельным docs-коммитом после фиксации release-коммита.
 
 ## Current Architecture
 
@@ -126,6 +139,8 @@ Release 1 не добавлял новые permissions. Используются
 - `/admin/legal-documents` — CRUD документов с HTML rich editor или PDF, version, type, active/published state.
 - `/admin/blog-categories` — категории, порядок, active state и количество статей.
 - `/admin/blog-posts` — статьи, структурированные blocks, media, publication и SEO.
+- `/admin/home` — именованные секции и повторяемые коллекции главной, SEO и публикация.
+- `/admin/stories` — истории, media, сортировка и active visibility.
 - Публикационные поля и действия дополнительно ограничены `content.publish`.
 - Существующие `/admin/users` и `/admin/roles` сохранены.
 
@@ -135,6 +150,7 @@ Release 1 не добавлял новые permissions. Используются
 - `site-header`, `mobile-menu`, `site-footer`, `breadcrumbs`, `button`.
 - `components/form/input.blade.php` как foundation будущих форм.
 - `blog-card`, `pagination`, `article-image` для публичного Blog.
+- `responsive-image` и фиксированная `pages/home.blade.php` для главной.
 - Settings передаются в header/footer/pages из одного typed/cached механизма.
 - Mobile menu поддерживает keyboard Escape, focus trap, `aria-expanded`, блокировку фонового scroll и возврат фокуса.
 - Видимый focus, semantic landmarks и reduced-motion предусмотрены в общем CSS.
@@ -145,11 +161,13 @@ Release 1 не добавлял новые permissions. Используются
 - Администратор редактирует именованные поля, а не произвольные key/value записи.
 - HTML LegalDocument очищается whitelist-санитайзером при записи; публично доступны только active и опубликованные документы.
 - Contacts использует provider-neutral presentation fallback карты, координаты и внешние route links. API key и постоянный map provider не выбирались в Release 1.
-- Корневой маршрут временно показывает Contacts, чтобы не создавать фиктивную главную до Release 3.
+- Корневой маршрут показывает SSR-главную; Contacts остаётся самостоятельной страницей `/contacts`.
 - Не существующие будущие маршруты остаются неактивными в navigation config вместо fake pages.
 - Article content хранится как фиксированный JSON-контракт и редактируется Filament Builder; решение зафиксировано в `docs/DECISIONS.md` (ADR-001).
 - Общий `HtmlSanitizer` переиспользуется LegalDocument и rich text блоками Blog; второй независимый sanitizer не создан.
 - Listing выбирает только необходимые поля без полного content JSON и eager-loads category.
+- Архитектура Home singleton/коллекций зафиксирована в `docs/DECISIONS.md` (ADR-002); Stories отделены от Home JSON.
+- Home Blog preview выбирает только необходимые поля и eager-loads category; публичные visibility scopes не дублируются.
 
 ## Protected / Existing Functionality
 
@@ -166,17 +184,18 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Missing Design Assets
 
-- Утверждённые Figma exports, Blog listing/article макеты, изображения и responsive image assets отсутствуют в репозитории и в материалах Release 1/2.
+- Утверждённые Figma exports, Home/Blog макеты, изображения и responsive image assets отсутствуют в репозитории и в материалах Release 1/2/3.
 - Случайные изображения и сгенерированные замены не использовались.
 - Реализована семантическая responsive-композиция по текстовой спецификации и существующей системе Release 1; визуальную сверку с исходными макетами нужно выполнить после их передачи.
 
 ## Known Technical Debt
 
-- MySQL 8+ недоступен в текущем окружении (`127.0.0.1:3306`), поэтому миграции Release 0/1/2 проверены только на SQLite. Перед production обязателен `migrate:fresh --seed` на MySQL 8+.
+- MySQL 8+ недоступен в текущем окружении (`127.0.0.1:3306`), поэтому миграции Release 0–3 проверены только на SQLite. Перед production обязателен `migrate:fresh --seed` на MySQL 8+.
 - Постоянный картографический provider не выбран; Contacts использует безопасный presentation fallback без API key.
 - Контакты, координаты, route links и юридические документы должны быть заполнены фактическими данными через Filament.
 - Pixel-perfect сверка и подключение утверждённых изображений отложены до получения исходных макетов/assets.
-- Полноценная responsive image optimization pipeline не входит в Release 2; media хранятся через Laravel Storage с MIME/size validation и alt в article blocks.
+- Home использует desktop/mobile `<picture>` semantics и loading priorities, но генерация производных размеров/WebP/AVIF требует production image pipeline или утверждённых prepared assets.
+- Визуальный Browser QA Release 3 заблокирован localhost URL policy встроенного браузера; повторить 360/390/768/1024/1280/1440 после восстановления browser access.
 - Защищённый Git baseline Release 0–2 создан; `.env`, dependencies, production build и сгенерированные Filament assets исключены из истории.
 
 ## Tests
@@ -184,23 +203,24 @@ Release 1 не добавлял новые permissions. Используются
 - Release 1: public pages/statuses, custom 404, LegalDocument visibility, HTML sanitization, PDF branch, Settings rendering.
 - Admin: `settings.view`/`settings.manage`, content access and super-admin update flow.
 - Release 2: visibility, category/search/date filters, pagination query preservation, previous/next, structured blocks, XSS, SEO и admin publication bypass protection.
+- Release 3: real root Home, Settings reuse, active/inactive Home and Stories, stable Story order, public-only Blog preview, fixed collection sanitization, Filament access и crafted publication bypass protection.
 - Полный Release 0 regression suite сохранён и проходит.
 
 ## Pending Work
 
-- Следующий этап по SPEC — Release 3 Main Page, только после отдельного задания и получения утверждённых макетов/assets.
-- Затем остаются Releases 4–9: Leads, Genplan foundation/interactions, Plots, Surroundings, production QA/SEO.
+- Следующий этап по SPEC — Release 4 Leads, только после отдельного задания.
+- Затем остаются Releases 5–9: Genplan foundation/interactions, Plots, Surroundings, production QA/SEO.
 - До production: MySQL 8+ migration check, реальные settings/legal/blog data и визуальная сверка с макетами.
 
 ## Last Verification
 
 - `composer validate --strict` — PASS.
 - `composer audit --locked` — PASS, advisories отсутствуют.
-- При повторной baseline-проверке 2026-08-11 endpoint Packagist security-advisories временно отвечал timeout/502; `composer.lock` после последнего успешного строгого аудита не изменялся, локальный `--ignore-unreachable` не выявил advisories.
+- После временных timeout/502 Packagist повторный строгий `composer audit --locked` завершился успешно; advisories отсутствуют.
 - `npm audit --audit-level=moderate` — PASS, 0 vulnerabilities.
-- `php artisan test` — PASS, 35 tests / 180 assertions.
+- `php artisan test` — PASS, 44 tests / 231 assertions.
 - `php artisan migrate:fresh --seed` — PASS на SQLite.
-- rollback двух Blog migrations, повторное применение и финальный fresh/seed — PASS на SQLite.
+- rollback двух Home/Story migrations, повторное применение и финальный fresh/seed — PASS на SQLite.
 - `vendor/bin/pint` и `vendor/bin/pint --test` — PASS.
 - `npm run build` — PASS, Vite 7.3.6.
 - `php artisan view:cache` — PASS.
@@ -208,10 +228,11 @@ Release 1 не добавлял новые permissions. Используются
 - Browser QA Blog listing/article: 360/390/768/1024/1280/1440, без horizontal overflow и console errors.
 - Browser QA Blog filters/search, semantic article, SEO metadata и previous/next — PASS.
 - Mobile menu keyboard/focus flow — PASS.
+- Browser QA Release 3: BLOCKED — localhost navigation запрещена URL policy встроенного браузера после первоначального connection refusal; HTTP 200 и DOM/visibility проверены feature-тестами, визуальные ширины не подтверждены.
 - В публичных Vite assets нет ссылок на Filament — PASS.
 - `.env`, `public/build`, `public/storage` игнорируются git — PASS.
 - MySQL `127.0.0.1:3306` — UNAVAILABLE.
 
 ## Last Updated
 
-2026-08-11 — завершён Release 2: Blog domain, structured content, Filament resources, public listing/article, filters, SEO, responsive/a11y QA и полный regression-check.
+2026-08-11 — реализован Release 3: fixed Home architecture, Stories, Filament editors, public SSR composition, SEO/responsive media semantics, accessibility interactions и полный automated regression-check; browser visual QA ожидает доступ к localhost.
