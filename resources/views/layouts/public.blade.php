@@ -35,7 +35,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     @php($settings ??= app(\App\Domain\Settings\SiteSettings::class)->all())
-    <body class="site-body">
+    <body class="site-body @yield('body_class')">
         <a class="skip-link" href="#main-content">Перейти к содержимому</a>
 
         <x-site-header :settings="$settings" />

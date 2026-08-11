@@ -8,6 +8,8 @@
         'Google Maps' => $settings['routes.google'],
         '2GIS' => $settings['routes.two_gis'],
     ])->filter();
+    $benefitImages = ['assets/design/home-forest.webp', 'assets/design/home-water.webp', 'assets/design/home-comfort.webp'];
+    $scenarioImages = ['assets/design/home-life.webp', 'assets/design/home-bike.webp', 'assets/design/home-winter.webp'];
 @endphp
 
 @extends('layouts.public')
@@ -17,6 +19,7 @@
 @section('description', $home->seo_description ?: $home->hero_description)
 @section('canonical', route('home'))
 @section('og_image', $ogImage)
+@section('body_class', 'home-page')
 
 @section('content')
     <section class="home-hero" aria-labelledby="home-hero-title">
@@ -26,39 +29,26 @@
                 :mobile-path="$home->hero_image_mobile"
                 :alt="$home->hero_image_alt ?: ''"
                 :eager="true"
+                fallback="assets/design/home-hero.webp"
             />
         </div>
         <div class="site-container home-hero__content">
-            @if ($home->hero_eyebrow)
-                <p class="home-kicker">{{ $home->hero_eyebrow }}</p>
-            @endif
-            <h1 id="home-hero-title">{{ $home->hero_title }}</h1>
-            @if ($home->hero_description)
-                <p class="home-hero__lead">{{ $home->hero_description }}</p>
-            @endif
-            <div class="home-hero__actions">
-                <x-button href="#visit" variant="accent">Запланировать визит</x-button>
-                @if ($home->hero_price)
-                    <span>{{ $home->hero_price }}</span>
-                @endif
-            </div>
+            <h1 class="sr-only" id="home-hero-title">{{ $home->hero_title }}</h1>
+            <p class="home-hero__wordmark" aria-hidden="true">РелаксЛэнд Можайский</p>
         </div>
     </section>
 
     <section class="home-section home-intro" aria-labelledby="home-intro-title">
         <div class="site-container">
-            <div class="home-heading home-heading--split">
-                <p class="home-kicker">Почему RelaxLand</p>
-                <div>
-                    <h2 id="home-intro-title">{{ $home->intro_title }}</h2>
-                    @if ($home->intro_text)<p>{{ $home->intro_text }}</p>@endif
-                </div>
+            <div class="home-heading home-heading--statement">
+                <h2 id="home-intro-title">{{ $home->intro_title }}</h2>
+                @if ($home->intro_text)<p>{{ $home->intro_text }}</p>@endif
             </div>
             @if ($home->benefits)
                 <div class="home-benefits">
                     @foreach ($home->benefits as $index => $benefit)
                         <article class="home-benefit">
-                            <span aria-hidden="true">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</span>
+                            <img src="{{ asset($benefitImages[$index % count($benefitImages)]) }}" alt="" loading="lazy">
                             <h3>{{ $benefit['title'] ?? '' }}</h3>
                             @if ($benefit['text'] ?? null)<p>{{ $benefit['text'] }}</p>@endif
                         </article>
@@ -70,9 +60,8 @@
 
     <section class="home-section home-atmosphere" aria-labelledby="home-atmosphere-title">
         <div class="site-container home-atmosphere__grid">
-            <x-responsive-image class="home-atmosphere__media" :path="$home->atmosphere_image" :alt="$home->atmosphere_image_alt ?: ''" />
             <div class="home-atmosphere__copy">
-                <p class="home-kicker">Атмосфера</p>
+                <p class="home-kicker">Тишина становится частью дня</p>
                 <h2 id="home-atmosphere-title">{{ $home->atmosphere_title }}</h2>
                 @if ($home->atmosphere_text)<p>{{ $home->atmosphere_text }}</p>@endif
             </div>
@@ -94,6 +83,7 @@
                                 :path="$scenario['image'] ?? null"
                                 :mobile-path="$scenario['image_mobile'] ?? null"
                                 :alt="$scenario['image_alt'] ?? ''"
+                                :fallback="$scenarioImages[$loop->index % count($scenarioImages)]"
                             />
                             <div class="home-scenario__copy">
                                 @if ($scenario['label'] ?? null)<span>{{ $scenario['label'] }}</span>@endif
@@ -108,6 +98,7 @@
     @endif
 
     <section class="home-section home-care" aria-labelledby="home-care-title">
+        <img class="home-care__background" src="{{ asset('assets/design/home-care.webp') }}" alt="" loading="lazy">
         <div class="site-container home-care__grid">
             <div class="home-heading">
                 <p class="home-kicker">Сервис</p>
@@ -165,6 +156,7 @@
                             :path="$season['image'] ?? null"
                             :mobile-path="$season['image_mobile'] ?? null"
                             :alt="$season['image_alt'] ?? ''"
+                            :fallback="$index === 0 ? 'assets/design/home-summer.webp' : 'assets/design/home-winter.webp'"
                         />
                         <div class="season-panel__copy">
                             <span>{{ $season['label'] ?? '' }}</span>
@@ -195,7 +187,7 @@
                 </div>
             </div>
             <div class="home-genplan__frame">
-                <x-responsive-image :path="$home->genplan_image" :alt="$home->genplan_image_alt ?: ''" />
+                <x-responsive-image :path="$home->genplan_image" :alt="$home->genplan_image_alt ?: ''" fallback="assets/design/home-genplan.webp" />
                 <x-button :disabled="true" variant="outline">Интерактивный генплан — скоро</x-button>
             </div>
         </div>
@@ -239,7 +231,7 @@
                                     Ваш браузер не поддерживает видео.
                                 </video>
                             @else
-                                <x-responsive-image class="story-card__media" :path="$story->image" :alt="$story->image_alt ?: ''" />
+                                <x-responsive-image class="story-card__media" :path="$story->image" :alt="$story->image_alt ?: ''" fallback="assets/design/home-story.webp" />
                             @endif
                             <div class="story-card__copy">
                                 <h3>{{ $story->title }}</h3>
@@ -290,7 +282,7 @@
                 <h2 id="home-developer-title">{{ $home->developer_title }}</h2>
                 @if ($home->developer_text)<p>{{ $home->developer_text }}</p>@endif
             </div>
-            <x-responsive-image class="home-developer__media" :path="$home->developer_image" :alt="$home->developer_image_alt ?: ''" />
+            <x-responsive-image class="home-developer__media" :path="$home->developer_image" :alt="$home->developer_image_alt ?: ''" fallback="assets/design/home-developer.webp" />
         </div>
     </section>
 

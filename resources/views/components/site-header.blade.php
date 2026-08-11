@@ -5,13 +5,8 @@
     $phoneHref = \App\Domain\Settings\SiteSettings::phoneHref($phone);
 @endphp
 
-<header class="site-header" data-site-header>
+<header @class(['site-header', 'site-header--overlay' => request()->routeIs('home')]) data-site-header>
     <div class="site-container site-header__inner">
-        <a class="brand-mark" href="{{ route('home') }}" aria-label="RelaxLand — на главную">
-            <span class="brand-mark__name">RelaxLand</span>
-            <span class="brand-mark__place">Можайский</span>
-        </a>
-
         <nav class="desktop-nav" aria-label="Основная навигация">
             @foreach (config('navigation.header') as $item)
                 @if ($item['route'] && Route::has($item['route']))
@@ -24,18 +19,20 @@
             @endforeach
         </nav>
 
-        <div class="header-contact">
-            <div class="header-contact__meta">
-                @if ($phoneHref)
-                    <a class="header-contact__phone" href="{{ $phoneHref }}">{{ $phone }}</a>
-                @else
-                    <span class="header-contact__phone">Телефон не указан</span>
-                @endif
+        <a class="header-home" href="{{ route('home') }}" aria-label="RelaxLand — на главную">RelaxLand</a>
 
-                @if ($settings['contacts.working_hours'])
-                    <span class="header-contact__hours">{{ $settings['contacts.working_hours'] }}</span>
-                @endif
-            </div>
+        <div class="header-contact">
+            @if ($phoneHref || $settings['contacts.working_hours'])
+                <div class="header-contact__meta">
+                    @if ($phoneHref)
+                        <a class="header-contact__phone" href="{{ $phoneHref }}">{{ $phone }}</a>
+                    @endif
+
+                    @if ($settings['contacts.working_hours'])
+                        <span class="header-contact__hours">{{ $settings['contacts.working_hours'] }}</span>
+                    @endif
+                </div>
+            @endif
 
             <x-button :href="$phoneHref" :disabled="! $phoneHref" variant="accent" class="header-contact__cta">
                 Позвонить мечте

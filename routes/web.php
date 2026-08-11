@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicPageController::class, 'home'])->name('home');
 
+Route::get('/about', [PublicPageController::class, 'about'])->name('about');
 Route::get('/contacts', [PublicPageController::class, 'contacts'])->name('contacts');
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');

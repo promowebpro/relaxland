@@ -2,7 +2,7 @@
 
 return [
     'header' => [
-        ['label' => 'О нас', 'route' => null],
+        ['label' => 'О нас', 'route' => 'about'],
         ['label' => 'Генплан', 'route' => null],
         ['label' => 'Выбрать участок', 'route' => null],
         ['label' => 'Контакты', 'route' => 'contacts'],
@@ -16,7 +16,7 @@ return [
             ['label' => 'Варианты приобретения', 'route' => null],
         ],
         'Партнёрам' => [
-            ['label' => 'О нас', 'route' => null],
+            ['label' => 'О нас', 'route' => 'about'],
             ['label' => 'Контакты', 'route' => 'contacts'],
             ['label' => 'Блог', 'route' => 'blog.index'],
         ],

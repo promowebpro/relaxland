@@ -58,13 +58,28 @@
                     @if ($post->cover_image)
                         <img src="{{ Storage::disk('public')->url($post->cover_image) }}" alt="" fetchpriority="high">
                     @else
-                        <span class="blog-image-placeholder" aria-hidden="true">RelaxLand</span>
+                        <img src="{{ asset('assets/design/blog-01.webp') }}" alt="" fetchpriority="high">
                     @endif
                 </div>
             </div>
         </header>
 
-        <div class="article-content site-container">
+        <div class="article-layout site-container">
+            <aside class="article-sidebar">
+                <dl>
+                    <div><dt>Дата</dt><dd>{{ $post->published_at->translatedFormat('d.m.Y') }}</dd></div>
+                    @if ($post->reading_time)<div><dt>Чтение</dt><dd>{{ $post->reading_time }} минут</dd></div>@endif
+                    <div><dt>Рубрика</dt><dd>{{ $post->category->name }}</dd></div>
+                </dl>
+                @php($headings = collect($blocks)->where('type', 'heading')->take(6))
+                @if ($headings->isNotEmpty())
+                    <nav aria-label="Содержание статьи">
+                        <span>В статье</span>
+                        @foreach ($headings as $heading)<p>{{ $heading['data']['text'] }}</p>@endforeach
+                    </nav>
+                @endif
+            </aside>
+            <div class="article-content">
             @foreach ($blocks as $block)
                 @switch($block['type'])
                     @case('heading')
@@ -104,6 +119,7 @@
                         @break
                 @endswitch
             @endforeach
+            </div>
         </div>
 
         <nav class="article-navigation site-container" aria-label="Другие статьи">

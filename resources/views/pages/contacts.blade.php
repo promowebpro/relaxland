@@ -21,16 +21,13 @@
 @endphp
 
 @section('content')
-    <section class="page-hero page-hero--contacts">
+    <section class="page-intro page-intro--contacts">
         <div class="site-container">
             <x-breadcrumbs :items="[
                 ['label' => 'Главная', 'url' => route('home')],
                 ['label' => 'Контакты'],
             ]" />
-            <div class="page-hero__row">
-                <h1>Контакты</h1>
-                <p>Мы рядом, чтобы помочь познакомиться с посёлком и спланировать поездку.</p>
-            </div>
+            <h1>Контакты</h1>
         </div>
     </section>
 
@@ -98,7 +95,7 @@
         </div>
     </section>
 
-    <section class="visit-invite">
+    <section class="visit-invite" style="--visit-image: url('{{ asset('assets/design/home-atmosphere.webp') }}')">
         <div class="site-container visit-invite__inner">
             <span class="eyebrow">Время увидеть всё своими глазами</span>
             <h2>Приезжайте знакомиться с RelaxLand</h2>
@@ -119,7 +116,7 @@
             </div>
 
             <div class="map-card" aria-label="Информация о расположении посёлка">
-                <div class="map-card__visual" aria-hidden="true">
+                <div class="map-card__visual" style="--map-image: url('{{ asset('assets/design/contacts-map.webp') }}')" aria-hidden="true">
                     <div class="map-card__grid"></div>
                     <span class="map-card__marker"></span>
                     <span class="map-card__label">RelaxLand</span>

@@ -4,21 +4,20 @@
 @section('description', 'Юридические документы RelaxLand.')
 
 @section('content')
-    <section class="page-hero page-hero--legal">
+    <section class="page-intro page-intro--legal">
         <div class="site-container">
             <x-breadcrumbs :items="[
                 ['label' => 'Главная', 'url' => route('home')],
                 ['label' => 'Конфиденциальность'],
             ]" />
-            <div class="page-hero__row">
-                <h1>Конфиденциальность</h1>
-                <p>Актуальные документы и условия обработки персональных данных.</p>
-            </div>
+            <h1>Конфиденциальность</h1>
         </div>
     </section>
 
     <section class="legal-list section-spacing">
-        <div class="site-container">
+        <div class="site-container legal-list__layout">
+            <p class="legal-list__intro">Актуальные документы и условия обработки персональных данных.</p>
+            <div>
             @forelse ($documents as $document)
                 <a class="legal-list__item" href="{{ route('legal.show', $document->slug) }}">
                     <span class="legal-list__index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
@@ -34,6 +33,7 @@
                     <p>После публикации в административной панели они появятся на этой странице.</p>
                 </div>
             @endforelse
+            </div>
         </div>
     </section>
 @endsection

@@ -42,6 +42,9 @@
                             </li>
                         @endif
                     </ul>
+                    @if ($loop->first)
+                        <x-button :href="$phoneHref" :disabled="! $phoneHref" variant="light" class="site-footer__cta">Позвонить мечте</x-button>
+                    @endif
                 </nav>
             @endforeach
 
@@ -76,8 +79,7 @@
         </div>
 
         <div class="site-footer__wordmark" aria-hidden="true">
-            <span>РелаксЛэнд</span>
-            <span>Можайский</span>
+            <span>РелаксЛэнд Можайский</span>
         </div>
 
         <div class="site-footer__bottom">
@@ -86,6 +88,7 @@
             @if ($settings['footer.disclaimer'])
                 <p>{!! nl2br(e($settings['footer.disclaimer'])) !!}</p>
             @endif
+            <span class="site-footer__credit">Создано с заботой</span>
         </div>
     </div>
 </footer>

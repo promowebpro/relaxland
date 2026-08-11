@@ -36,6 +36,18 @@ class PublicPagesTest extends TestCase
         $this->get(route('success'))
             ->assertOk()
             ->assertSee('Спасибо!');
+
+        $this->get(route('about'))
+            ->assertOk()
+            ->assertSee('О нас')
+            ->assertSee('Забота о клиенте');
+    }
+
+    public function test_release_three_a_does_not_expose_future_product_routes(): void
+    {
+        foreach (['/leads', '/genplan', '/plots', '/surroundings'] as $path) {
+            $this->get($path)->assertNotFound();
+        }
     }
 
     public function test_unknown_url_returns_custom_404_with_http_404_status(): void

@@ -3,11 +3,15 @@
     'mobilePath' => null,
     'alt' => '',
     'eager' => false,
+    'fallback' => null,
+    'fallbackMobile' => null,
 ])
 
 @php
     $src = $path ? Storage::disk('public')->url($path) : null;
     $mobileSrc = $mobilePath ? Storage::disk('public')->url($mobilePath) : null;
+    $src ??= $fallback ? asset($fallback) : null;
+    $mobileSrc ??= $fallbackMobile ? asset($fallbackMobile) : null;
 @endphp
 
 @if ($src || $mobileSrc)

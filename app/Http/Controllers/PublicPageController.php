@@ -40,6 +40,16 @@ class PublicPageController extends Controller
         ]);
     }
 
+    public function about(SiteSettings $siteSettings): View
+    {
+        $home = HomePage::query()->active()->first() ?: new HomePage(HomePage::defaultContent());
+
+        return view('pages.about', [
+            'home' => $home,
+            'settings' => $siteSettings->all(),
+        ]);
+    }
+
     public function success(SiteSettings $siteSettings): View
     {
         return view('pages.success', [

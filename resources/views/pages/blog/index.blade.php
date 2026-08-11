@@ -5,17 +5,14 @@
 @section('canonical', route('blog.index'))
 
 @section('content')
-    <section class="page-hero page-hero--blog">
+    <section class="page-intro page-intro--blog">
         <div class="site-container">
             <x-breadcrumbs :items="[
                 ['label' => 'Главная', 'url' => route('home')],
                 ['label' => 'Блог'],
             ]" />
 
-            <div class="page-hero__row">
-                <h1>Блог</h1>
-                <p>Новости посёлка, идеи для загородной жизни и ответы на важные вопросы.</p>
-            </div>
+            <h1>Блог</h1>
         </div>
     </section>
 
@@ -62,13 +59,7 @@
                 @endif
             </form>
 
-            <div class="blog-results__heading">
-                <div>
-                    <span class="eyebrow">Материалы</span>
-                    <h2 id="blog-results-title">Последние публикации</h2>
-                </div>
-                <span>{{ $posts->total() }} {{ trans_choice('статья|статьи|статей', $posts->total()) }}</span>
-            </div>
+            <h2 class="sr-only" id="blog-results-title">Последние публикации</h2>
 
             @if ($posts->isEmpty())
                 <div class="blog-empty">
