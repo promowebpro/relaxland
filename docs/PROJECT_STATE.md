@@ -52,7 +52,7 @@ Release 3 — Main Page: **IMPLEMENTED; browser visual QA pending**.
 - Seasons работают как доступные tabs с ArrowLeft/ArrowRight/Home/End, SSR first state и reduced-motion support.
 - Settings и Blog переиспользуются без дублирования; Genplan остаётся статичным preview с disabled CTA, Leads отсутствуют.
 - Итоговая автоматическая проверка: 44 tests / 231 assertions.
-- Release 3 functional commit: будет записан отдельным docs-коммитом после фиксации release-коммита.
+- Release 3 functional commit: `a3abdc05d0dc4b9513e4e1d357830f97a2f38c22` (`feat: implement RelaxLand main page`).
 
 ## Current Architecture
 
