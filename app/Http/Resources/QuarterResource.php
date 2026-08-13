@@ -9,6 +9,8 @@ class QuarterResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $geometry = $this->geometries->first();
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -16,11 +18,14 @@ class QuarterResource extends JsonResource
             'description' => $this->description,
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
-            'polygon' => $this->polygon_data,
-            'label' => [
-                'x' => $this->label_x !== null ? (float) $this->label_x : null,
-                'y' => $this->label_y !== null ? (float) $this->label_y : null,
-            ],
+            'geometry' => $geometry ? [
+                'mode' => $geometry->mode->value,
+                'polygon' => $geometry->polygon_data,
+                'label' => [
+                    'x' => $geometry->label_x !== null ? (float) $geometry->label_x : null,
+                    'y' => $geometry->label_y !== null ? (float) $geometry->label_y : null,
+                ],
+            ] : null,
         ];
     }
 }

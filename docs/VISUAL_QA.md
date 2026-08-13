@@ -57,7 +57,7 @@
 
 - `MISSING DESIGN FONT`: exact display-font files/licence are absent. System serif fallback is intentionally used; no random webfont was downloaded.
 - `MISSING 404 MASCOT SOURCE`: mascot in `404.pdf` is not available as a clean standalone raster/vector asset. The page uses the approved spacing, hierarchy and large typographic `404` without an invented illustration.
-- `GENPLAN ASSET BOUNDARY`: `genplan.png` является contact sheet, а не отдельным production background/layer asset. Release 5 реализует shell и geometry architecture; фактические 2D/3D/mobile backgrounds должны быть загружены через Filament с одинаковым coordinate framing.
+- `GENPLAN ASSET BOUNDARY`: `genplan.png` является contact sheet, а не отдельным production background/layer asset. 2D и 3D имеют независимую geometry; каждый optional mobile background обязан сохранять проекцию и framing соответствующего desktop-режима и требует явного подтверждения совместимости.
 - Existing CMS-uploaded images take priority. Approved extracted WebP files are deterministic fallbacks when an editor has not uploaded page media.
 
 ## Automated verification
@@ -77,12 +77,12 @@
 | --- | --- |
 | 3D overview | SSR 3D background, Quarter SVG layer и текстовый список кварталов |
 | 3D + infrastructure | SVG marker layer с `show_on_3d`; marker data уже управляется из Filament/API |
-| 2D plan | Базовый 2D/3D switch меняет background без дублирования geometry |
+| 2D plan | 2D/3D switch синхронно меняет background и отдельный mode-specific geometry layer |
 | Quarter selected | Минимальное progressive selection: synchronized polygon/list state и Quarter summary card |
 | Quarter card | SSR карточка name/description/status; Plot CTA явно отложен до Release 7 |
 | Genplan / Surroundings | Доступные tabs; Surroundings показывает provider-neutral placeholder и SSR list |
 | Desktop | Двухколоночный stage/sidebar shell по reference hierarchy |
-| Mobile | Одноколоночный shell, full-width controls, horizontal Quarter selector; подготовленный mobile asset используется только с тем же normalized framing |
+| Mobile | Одноколоночный shell, full-width controls, horizontal Quarter selector; совместимый mobile asset переиспользует geometry своей проекции, отдельной mobile geometry нет |
 
 Full hover/click choreography, animations, history/deep links, zoom/pan и полноценные инфраструктурные interactions относятся к Release 6 и в этой матрице имеют статус **N/A**.
 
@@ -103,13 +103,30 @@ Full hover/click choreography, animations, history/deep links, zoom/pan и по�
 ## Проверенные состояния Release 5
 
 - SSR `/genplan` остаётся содержательным без JS; при отсутствии active Genplan показывает controlled empty state и Lead CTA.
-- 3D → 2D меняет image URL/alt, `aria-pressed` и marker visibility; geometry остаётся тем же SVG DOM.
+- 3D → 2D меняет image URL/alt, `aria-pressed` и видимый mode-specific SVG group; предыдущий layer получает `hidden`, поэтому cross-mode geometry не остаётся на экране.
 - Quarter выбирается pointer или keyboard Enter/Space; polygon, list control и visible summary card синхронизированы.
 - Genplan/Surroundings tabs поддерживают click, ArrowLeft/ArrowRight/Home/End, `aria-selected`, focus и panel visibility.
 - Mobile menu на Genplan открывается, блокирует body scroll, закрывается Escape и возвращает focus.
-- Mobile variant применяется только при его наличии; без него основной image сохраняет собственный aspect ratio и не искажается.
+- Mobile variant применяется только при наличии explicit compatibility confirmation; без него renderer использует desktop asset в заявленном stage aspect ratio.
 - Browser console warning/error log — пуст; document-level horizontal overflow и broken images отсутствуют.
-- Filament группа «Посёлок» и все пять CRUD listing открыты; Quarter geometry редактируется structured repeater `x/y`, raw JSON UI отсутствует.
+- Filament группа «Посёлок» и все пять CRUD listing открыты; Quarter/Plot/InfrastructurePoint редактируют 3D и 2D geometry в отдельных structured sections, raw JSON UI отсутствует.
+
+# Release 5A — Genplan Multi-view Geometry Correction Visual QA
+
+Дата проверки: 2026-08-13.
+
+Проверочный fixture намеренно использует разные координаты одного Quarter и InfrastructurePoint в `3d` и `2d`, а второй Quarter имеет только `3d`. Ожидаемый результат: переключение показывает координаты только выбранного режима; отсутствующий `2d` record не получает `3d` fallback.
+
+| Release 5A / ширина | 360 | 390 | 768 | 1024 | 1280 | 1440 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 3D background + 3D layer | PASS | PASS | PASS | PASS | PASS | PASS |
+| 2D background + distinct 2D layer | PASS | PASS | PASS | PASS | PASS | PASS |
+| Missing 2D geometry is cleared | PASS | PASS | PASS | PASS | PASS | PASS |
+| Image/SVG rectangle delta | 0 | 0 | 0 | 0 | 0 | 0 |
+| Document overflow / broken images | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| Minimum mode-control target | 44px | 44px | 44px | 44px | 44px | 44px |
+
+Дополнительно проверены SSR default `3d`, native button keyboard activation, controlled mode state, separate Filament 2D/3D sections и пустой browser console warning/error log. QA fixture удалён после проверки; production data в репозиторий не добавлены.
 
 ## Ограничения Release 5
 

@@ -10,6 +10,8 @@ class InfrastructurePointResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $geometry = $this->geometries->first();
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -18,7 +20,10 @@ class InfrastructurePointResource extends JsonResource
             'icon' => $this->icon,
             'image' => $this->image ? Storage::disk('public')->url($this->image) : null,
             'description' => $this->description,
-            'marker' => ['x' => (float) $this->marker_x, 'y' => (float) $this->marker_y],
+            'geometry' => [
+                'mode' => $geometry->mode->value,
+                'marker' => ['x' => (float) $geometry->marker_x, 'y' => (float) $geometry->marker_y],
+            ],
             'show_on_3d' => $this->show_on_3d,
             'show_on_2d' => $this->show_on_2d,
         ];

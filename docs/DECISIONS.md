@@ -135,17 +135,17 @@ About реализуется фиксированным Blade route `/about`: с
 
 ## ADR-005 — Genplan Coordinate and Geometry Contract
 
-**Status:** Accepted, 2026-08-13.
+**Status:** Accepted, corrected by Release 5A on 2026-08-13.
 
 ### Context
 
-Один Genplan должен использовать общую геометрию поверх 2D, 3D и optional mobile background assets. Координаты обязаны переживать responsive resize, не зависеть от CSS pixels и оставаться пригодными для будущего visual editor, API и SVG interactions. Хранение готового SVG из административного ввода расширило бы поверхность XSS и сделало формат разметки частью данных.
+Quarter, Plot и InfrastructurePoint являются едиными бизнес-сущностями, но 2D и 3D backgrounds показывают разные проекции одного генплана. Одинаковая normalized точка не обязана обозначать тот же объект в перспективной 3D-проекции и ортографической 2D-проекции. Поэтому бизнес-данные должны оставаться общими, а presentation geometry — принадлежать конкретному режиму. Координаты обязаны переживать responsive resize, не зависеть от CSS pixels и оставаться пригодными для будущего visual editor, API и SVG interactions. Хранение готового SVG из административного ввода расширило бы поверхность XSS и сделало формат разметки частью данных.
 
 ### Decision
 
-Основной контракт всех точек Genplan — нормализованные координаты в диапазоне `0..1`. `x = 0` / `y = 0` обозначают левую / верхнюю границу coordinate canvas, `x = 1` / `y = 1` — правую / нижнюю. Quarter, Plot marker и InfrastructurePoint используют один контракт независимо от 2D/3D режима.
+Основной контракт всех точек Genplan — нормализованные координаты в диапазоне `0..1`. `x = 0` / `y = 0` обозначают левую / верхнюю границу coordinate canvas, `x = 1` / `y = 1` — правую / нижнюю. Контракт одинаков для режимов, но значения независимы: Quarter, Plot и InfrastructurePoint хранят geometry records с обязательным typed `mode = 2d|3d` и уникальной парой `entity_id + mode`.
 
-Публичный renderer переводит нормализованные значения в внутренний безопасный SVG `viewBox="0 0 1000 1000"`. Background image и overlay занимают один и тот же stage rectangle; поэтому масштабирование выполняется браузером одинаково и не требует CSS-pixel offsets. Optional mobile asset обязан сохранять ту же нормализованную framing-систему. Если mobile asset отсутствует, renderer сохраняет aspect ratio основного изображения, а не растягивает его до мобильной композиции.
+Публичный renderer переводит geometry выбранного режима во внутренний безопасный SVG `viewBox="0 0 1000 1000"`. Background image и соответствующий overlay занимают один и тот же stage rectangle; поэтому масштабирование выполняется браузером одинаково и не требует CSS-pixel offsets. При переключении renderer скрывает предыдущий geometry layer и не выполняет cross-mode fallback. Optional mobile asset допустим только после явного подтверждения, что он сохраняет проекцию и coordinate framing своего desktop-режима. Если mobile asset отсутствует, renderer использует desktop asset и сохраняет объявленный aspect ratio.
 
 ### Coordinate system
 
@@ -170,7 +170,8 @@ About реализуется фиксированным Blade route `/about`: с
 
 ### Why
 
-- одна геометрия синхронна для 2D, 3D и responsive layout;
+- одна бизнес-сущность имеет независимые presentation geometries для 2D и 3D;
+- responsive layout переиспользует geometry текущей проекции без отдельных mobile coordinates;
 - данные детерминированно сериализуются в API и SVG points;
 - future editor может менять UI без миграции DB-контракта;
 - server-side validation предотвращает malformed geometry даже вне Filament;
@@ -181,12 +182,17 @@ About реализуется фиксированным Blade route `/about`: с
 - CSS/display pixels: ломаются при resize и при замене исходного изображения.
 - Координаты исходного растра: требуют постоянной привязки к конкретным dimensions и усложняют mobile variants.
 - Готовый SVG/path markup в БД: unsafe, плохо валидируется и связывает данные с renderer implementation.
-- Отдельная геометрия для 2D и 3D: создаёт рассинхронизацию одного бизнес-объекта.
+- Общая геометрия для 2D и 3D: не описывает один объект в разных проекциях и приводит к визуально неверным overlay.
+- Автоматическая homography/perspective transformation: требует проверенных control points и отдельного математического контракта, которых в Foundation нет; угадывание преобразования опаснее отсутствующей geometry.
+- Полное дублирование Quarter/Plot/InfrastructurePoint по режимам: разрывает единую бизнес-сущность и дублирует статусы, цены и контент.
+- Raw JSON map `{"2d": ..., "3d": ...}` в business table: скрывает mode/FK/uniqueness от relational constraints и усложняет typed validation; выбраны отдельные geometry records.
 - Canvas/WebGL: лишает Foundation доступного DOM и не нужен для текущего объёма.
 
 ### Consequences
 
-- все background variants должны иметь согласованный coordinate framing; несовместимый crop требует подготовки нового asset, а не ручной поправки polygons;
+- 2D и 3D desktop backgrounds имеют собственные geometry records;
+- mobile variant должен сохранять framing соответствующего режима; отдельные mobile geometries не создаются;
+- сущность без geometry выбранного режима не получает geometry другого режима: API возвращает `null`, а SSR/JS очищают слой и используют controlled incomplete state там, где это необходимо;
 - graphic polygon editor позже обязан читать и сохранять тот же normalized list;
 - SVG scale `1000` является внутренней деталью renderer, а не новым DB-контрактом;
 - сложная geometry validation может быть добавлена отдельно без изменения формата;
@@ -194,7 +200,10 @@ About реализуется фиксированным Blade route `/about`: с
 
 ### Migration implications
 
-- текущая первая миграция создаёт normalized decimal marker/label columns и JSON polygon columns; legacy pixel geometry отсутствует;
+- foundation migration из Release 5 создавала legacy normalized geometry непосредственно в business tables;
+- корректирующая migration Release 5A создаёт `quarter_geometries`, `plot_geometries`, `infrastructure_point_geometries`, переносит legacy geometry **только в `3d`** и удаляет legacy columns;
+- копирование legacy geometry одновременно в `2d` и `3d` запрещено: такой перенос ложно подтверждал бы корректность обеих проекций;
+- rollback восстанавливает legacy columns из `3d` records, после чего удаляет view-specific geometry tables;
 - будущий импорт pixel-based исходников должен явно делить `x` на source width и `y` на source height до записи;
 - смена coordinate contract потребует versioned data migration для всех Quarter/Plot/InfrastructurePoint records и синхронного обновления API/renderer;
 - произвольный SVG нельзя переносить в `polygon_data` без предварительного безопасного преобразования в список точек.

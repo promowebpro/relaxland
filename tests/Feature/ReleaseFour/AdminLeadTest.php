@@ -34,6 +34,24 @@ class AdminLeadTest extends TestCase
         $this->actingAs($contentManager)->get('/admin/leads')->assertForbidden();
     }
 
+    public function test_viewer_role_cannot_access_leads_or_personal_data(): void
+    {
+        $viewer = $this->userWithRole(RoleName::Viewer);
+        $lead = Lead::factory()->create([
+            'name' => 'Персональные данные клиента',
+            'phone' => '+7 999 000-00-01',
+            'email' => 'private@example.test',
+        ]);
+
+        $this->assertFalse($viewer->can(PermissionName::LeadsView->value));
+        $this->actingAs($viewer)->get('/admin/leads')->assertForbidden();
+        $this->get("/admin/leads/{$lead->id}")
+            ->assertForbidden()
+            ->assertDontSee($lead->name)
+            ->assertDontSee($lead->phone)
+            ->assertDontSee($lead->email);
+    }
+
     public function test_sales_manager_can_list_and_view_leads_but_cannot_create_or_delete(): void
     {
         $manager = $this->userWithRole(RoleName::SalesManager);

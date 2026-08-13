@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Domain\Genplan\GenplanMode;
 use App\Domain\Genplan\Plot;
 use App\Domain\Genplan\PlotStatus;
 use App\Domain\Genplan\Quarter;
@@ -11,6 +12,17 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class PlotFactory extends Factory
 {
     protected $model = Plot::class;
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (Plot $plot): void {
+            $plot->geometries()->create([
+                'mode' => GenplanMode::ThreeD,
+                'marker_x' => 0.2,
+                'marker_y' => 0.2,
+            ]);
+        });
+    }
 
     public function definition(): array
     {
@@ -24,8 +36,6 @@ class PlotFactory extends Factory
             'price' => '1234567.89',
             'price_per_sotka' => '99999.99',
             'status' => PlotStatus::Available,
-            'marker_x' => 0.2,
-            'marker_y' => 0.2,
             'is_visible' => true,
         ];
     }

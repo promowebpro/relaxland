@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\Quarters;
 
+use App\Domain\Genplan\GenplanMode;
 use App\Domain\Genplan\Quarter;
 use App\Domain\Genplan\QuarterStatus;
 use App\Domain\Genplan\Rules\NormalizedCoordinate;
+use App\Domain\Genplan\Rules\NormalizedPolygon;
 use App\Filament\Resources\Quarters\Pages\CreateQuarter;
 use App\Filament\Resources\Quarters\Pages\EditQuarter;
 use App\Filament\Resources\Quarters\Pages\ListQuarters;
@@ -53,15 +55,11 @@ class QuarterResource extends Resource
                 TextInput::make('slug')->label('Slug')->required()->alphaDash()->maxLength(255)->unique(modifyRuleUsing: fn ($rule, $get) => $rule->where('genplan_id', $get('genplan_id')), ignoreRecord: true),
                 Select::make('status')->label('Статус')->options(self::enumOptions())->required(),
                 Textarea::make('description')->label('Описание')->rows(4)->maxLength(3000)->columnSpanFull(),
-                $coordinate('label_x', 'Label X'), $coordinate('label_y', 'Label Y'),
                 TextInput::make('sort_order')->label('Порядок')->numeric()->integer()->minValue(0)->default(0)->required(),
                 Toggle::make('is_active')->label('Активен')->default(false),
             ]),
-            Section::make('Нормализованный полигон')->description('Минимум три точки; x/y от 0 до 1.')->schema([
-                Repeater::make('polygon_data')->label('Точки')->minItems(3)->required()->columns(2)->schema([
-                    $coordinate('x', 'X')->required(), $coordinate('y', 'Y')->required(),
-                ])->addActionLabel('Добавить точку')->reorderable(),
-            ]),
+            self::geometrySection(GenplanMode::TwoD, $coordinate),
+            self::geometrySection(GenplanMode::ThreeD, $coordinate),
         ]);
     }
 
@@ -77,6 +75,22 @@ class QuarterResource extends Resource
     private static function enumOptions(): array
     {
         return collect(QuarterStatus::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()])->all();
+    }
+
+    private static function geometrySection(GenplanMode $mode, callable $coordinate): Section
+    {
+        $prefix = "geometry_{$mode->value}";
+
+        return Section::make("Геометрия {$mode->label()}")
+            ->description("Координаты 0..1 относительно отдельного canvas {$mode->label()}; geometry другого режима не подставляется.")
+            ->columns(2)
+            ->schema([
+                $coordinate("{$prefix}_label_x", 'Label X'),
+                $coordinate("{$prefix}_label_y", 'Label Y'),
+                Repeater::make("{$prefix}_polygon_data")->label("Полигон {$mode->label()}")->rule(new NormalizedPolygon(true))->columns(2)->schema([
+                    $coordinate('x', 'X')->required(), $coordinate('y', 'Y')->required(),
+                ])->addActionLabel('Добавить точку')->reorderable()->columnSpanFull(),
+            ]);
     }
 
     public static function getPages(): array

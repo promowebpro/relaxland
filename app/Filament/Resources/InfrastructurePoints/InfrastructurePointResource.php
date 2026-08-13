@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\InfrastructurePoints;
 
+use App\Domain\Genplan\GenplanMode;
 use App\Domain\Genplan\InfrastructureCategory;
 use App\Domain\Genplan\InfrastructurePoint;
 use App\Domain\Genplan\Rules\NormalizedCoordinate;
@@ -44,7 +45,7 @@ class InfrastructurePointResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        $coordinate = fn (string $name, string $label) => TextInput::make($name)->label($label)->numeric()->step(0.000001)->minValue(0)->maxValue(1)->rule(new NormalizedCoordinate)->required();
+        $coordinate = fn (string $name, string $label) => TextInput::make($name)->label($label)->numeric()->step(0.000001)->minValue(0)->maxValue(1)->rule(new NormalizedCoordinate(true));
 
         return $schema->components([Section::make('Объект')->columns(2)->schema([
             Select::make('genplan_id')->label('Генплан')->relationship('genplan', 'name')->required()->searchable()->preload(),
@@ -52,10 +53,9 @@ class InfrastructurePointResource extends Resource
             Select::make('category')->label('Категория')->options(self::enumOptions())->required(), TextInput::make('icon')->label('Ключ иконки')->alphaDash()->maxLength(100),
             FileUpload::make('image')->label('Изображение')->disk('public')->directory('genplan/infrastructure')->image()->maxSize(15360),
             Textarea::make('description')->label('Описание')->rows(4)->maxLength(3000),
-            $coordinate('marker_x', 'X'), $coordinate('marker_y', 'Y'),
             Toggle::make('show_on_3d')->label('Показывать в 3D')->default(true), Toggle::make('show_on_2d')->label('Показывать в 2D')->default(true),
             TextInput::make('sort_order')->label('Порядок')->numeric()->integer()->minValue(0)->default(0)->required(), Toggle::make('is_active')->label('Активен')->default(false),
-        ])]);
+        ]), self::geometrySection(GenplanMode::TwoD, $coordinate), self::geometrySection(GenplanMode::ThreeD, $coordinate)]);
     }
 
     public static function table(Table $table): Table
@@ -70,6 +70,19 @@ class InfrastructurePointResource extends Resource
     private static function enumOptions(): array
     {
         return collect(InfrastructureCategory::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()])->all();
+    }
+
+    private static function geometrySection(GenplanMode $mode, callable $coordinate): Section
+    {
+        $prefix = "geometry_{$mode->value}";
+
+        return Section::make("Позиция {$mode->label()}")
+            ->description("Маркер относится только к projection space {$mode->label()}; visibility flag без координат маркер не создаёт.")
+            ->columns(2)
+            ->schema([
+                $coordinate("{$prefix}_marker_x", 'Marker X')->requiredWith("{$prefix}_marker_y"),
+                $coordinate("{$prefix}_marker_y", 'Marker Y')->requiredWith("{$prefix}_marker_x"),
+            ]);
     }
 
     public static function getPages(): array

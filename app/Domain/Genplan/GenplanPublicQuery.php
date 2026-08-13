@@ -11,6 +11,7 @@ class GenplanPublicQuery
         return Genplan::query()
             ->select([
                 'id', 'name', 'slug', 'image_3d', 'image_2d', 'mobile_image_3d', 'mobile_image_2d',
+                'mobile_image_3d_is_compatible', 'mobile_image_2d_is_compatible',
                 'original_width', 'original_height', 'is_active',
             ])
             ->active()
@@ -18,7 +19,7 @@ class GenplanPublicQuery
             ->first();
     }
 
-    public function overview(): ?Genplan
+    public function overview(GenplanMode $mode): ?Genplan
     {
         $genplan = $this->current();
 
@@ -26,27 +27,42 @@ class GenplanPublicQuery
             return null;
         }
 
-        $genplan->setRelation('quarters', $this->quarters($genplan));
+        $genplan->setRelation('quarters', $this->quarters($genplan, $mode));
+        $genplan->setAttribute('selected_mode', $mode);
+
+        return $genplan;
+    }
+
+    public function overviewForAllModes(): ?Genplan
+    {
+        $genplan = $this->current();
+
+        if (! $genplan) {
+            return null;
+        }
+
+        $genplan->setRelation('quarters', $this->quartersForAllModes($genplan));
 
         return $genplan;
     }
 
     /** @return Collection<int, Quarter> */
-    public function quarters(Genplan $genplan): Collection
+    public function quarters(Genplan $genplan, GenplanMode $mode): Collection
     {
-        return Quarter::query()
-            ->select([
-                'id', 'genplan_id', 'name', 'slug', 'description', 'status', 'polygon_data',
-                'label_x', 'label_y', 'sort_order', 'is_active',
-            ])
-            ->whereBelongsTo($genplan)
-            ->publiclyVisible()
-            ->orderBy('sort_order')
-            ->orderBy('id')
+        return $this->quarterBaseQuery($genplan)
+            ->with(['geometries' => fn ($query) => $query->where('mode', $mode->value)])
             ->get();
     }
 
-    public function quarter(string $slug): ?Quarter
+    /** @return Collection<int, Quarter> */
+    public function quartersForAllModes(Genplan $genplan): Collection
+    {
+        return $this->quarterBaseQuery($genplan)
+            ->with(['geometries' => fn ($query) => $query->whereIn('mode', array_column(GenplanMode::cases(), 'value'))])
+            ->get();
+    }
+
+    public function quarter(string $slug, GenplanMode $mode): ?Quarter
     {
         $genplan = $this->current();
 
@@ -54,34 +70,30 @@ class GenplanPublicQuery
             return null;
         }
 
-        return Quarter::query()
-            ->select([
-                'id', 'genplan_id', 'name', 'slug', 'description', 'status', 'polygon_data',
-                'label_x', 'label_y', 'sort_order', 'is_active',
-            ])
-            ->whereBelongsTo($genplan)
+        return $this->quarterBaseQuery($genplan)
             ->where('slug', $slug)
-            ->publiclyVisible()
+            ->with(['geometries' => fn ($query) => $query->where('mode', $mode->value)])
             ->first();
     }
 
     /** @return Collection<int, Plot> */
-    public function plots(Quarter $quarter): Collection
+    public function plots(Quarter $quarter, GenplanMode $mode): Collection
     {
         return Plot::query()
             ->select([
                 'id', 'quarter_id', 'number', 'slug', 'area', 'price', 'price_per_sotka',
-                'status', 'polygon_data', 'marker_x', 'marker_y', 'description', 'image', 'is_visible',
+                'status', 'description', 'image', 'is_visible',
             ])
             ->whereBelongsTo($quarter)
             ->publiclyVisible()
+            ->with(['geometries' => fn ($query) => $query->where('mode', $mode->value)])
             ->orderBy('number')
             ->orderBy('id')
             ->get();
     }
 
     /** @return Collection<int, InfrastructurePoint> */
-    public function infrastructure(?string $mode = null): Collection
+    public function infrastructure(GenplanMode $mode): Collection
     {
         $genplan = $this->current();
 
@@ -89,17 +101,30 @@ class GenplanPublicQuery
             return new Collection;
         }
 
-        return InfrastructurePoint::query()
-            ->select([
-                'id', 'genplan_id', 'name', 'category', 'icon', 'image', 'description',
-                'marker_x', 'marker_y', 'show_on_3d', 'show_on_2d', 'sort_order', 'is_active',
-            ])
-            ->whereBelongsTo($genplan)
-            ->active()
-            ->when($mode === '2d', fn ($query) => $query->where('show_on_2d', true))
-            ->when($mode === '3d', fn ($query) => $query->where('show_on_3d', true))
-            ->orderBy('sort_order')
-            ->orderBy('id')
+        $visibilityField = $mode === GenplanMode::TwoD ? 'show_on_2d' : 'show_on_3d';
+
+        return $this->infrastructureBaseQuery($genplan)
+            ->where($visibilityField, true)
+            ->whereHas('geometries', fn ($query) => $query->where('mode', $mode->value))
+            ->with(['geometries' => fn ($query) => $query->where('mode', $mode->value)])
+            ->get();
+    }
+
+    /** @return Collection<int, InfrastructurePoint> */
+    public function infrastructureForAllModes(): Collection
+    {
+        $genplan = $this->current();
+
+        if (! $genplan) {
+            return new Collection;
+        }
+
+        return $this->infrastructureBaseQuery($genplan)
+            ->where(function ($query): void {
+                $query->where('show_on_2d', true)->orWhere('show_on_3d', true);
+            })
+            ->whereHas('geometries', fn ($query) => $query->whereIn('mode', array_column(GenplanMode::cases(), 'value')))
+            ->with(['geometries' => fn ($query) => $query->whereIn('mode', array_column(GenplanMode::cases(), 'value'))])
             ->get();
     }
 
@@ -112,5 +137,28 @@ class GenplanPublicQuery
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
+    }
+
+    private function quarterBaseQuery(Genplan $genplan)
+    {
+        return Quarter::query()
+            ->select(['id', 'genplan_id', 'name', 'slug', 'description', 'status', 'sort_order', 'is_active'])
+            ->whereBelongsTo($genplan)
+            ->publiclyVisible()
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+
+    private function infrastructureBaseQuery(Genplan $genplan)
+    {
+        return InfrastructurePoint::query()
+            ->select([
+                'id', 'genplan_id', 'name', 'category', 'icon', 'image', 'description',
+                'show_on_3d', 'show_on_2d', 'sort_order', 'is_active',
+            ])
+            ->whereBelongsTo($genplan)
+            ->active()
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 }

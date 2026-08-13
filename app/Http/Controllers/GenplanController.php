@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Genplan\GenplanMode;
 use App\Domain\Genplan\GenplanPublicQuery;
 use App\Domain\Genplan\NormalizedGeometry;
 use App\Domain\Settings\SiteSettings;
@@ -14,11 +15,12 @@ class GenplanController extends Controller
         NormalizedGeometry $geometry,
         SiteSettings $siteSettings,
     ): View {
-        $genplan = $query->overview();
+        $genplan = $query->overviewForAllModes();
 
         return view('pages.genplan.index', [
             'genplan' => $genplan,
-            'infrastructure' => $genplan ? $query->infrastructure() : collect(),
+            'defaultMode' => GenplanMode::default(),
+            'infrastructure' => $genplan ? $query->infrastructureForAllModes() : collect(),
             'surroundings' => $query->surroundings(),
             'geometry' => $geometry,
             'settings' => $siteSettings->all(),

@@ -15,7 +15,8 @@ export const initializeStage = (root) => {
 
     const image = stage.querySelector('[data-genplan-image]');
     const modeButtons = [...root.querySelectorAll('[data-genplan-mode]')];
-    const markers = [...stage.querySelectorAll('[data-show-2d][data-show-3d]')];
+    const geometryLayers = [...stage.querySelectorAll('[data-geometry-mode]')];
+    const emptyStates = [...stage.querySelectorAll('[data-genplan-geometry-empty]')];
     let mode = modeButtons.find((button) => button.getAttribute('aria-pressed') === 'true')?.dataset.genplanMode || '3d';
 
     const renderMode = (nextMode) => {
@@ -25,9 +26,8 @@ export const initializeStage = (root) => {
         image.alt = `${root.querySelector('.genplan-toolbar .eyebrow')?.textContent?.trim() || 'Генплан'}, вид ${mode.toUpperCase()}`;
         stage.classList.toggle('has-mobile-background', responsiveImage.usesMobileBackground);
         modeButtons.forEach((button) => button.setAttribute('aria-pressed', button.dataset.genplanMode === mode ? 'true' : 'false'));
-        markers.forEach((marker) => {
-            marker.toggleAttribute('hidden', marker.getAttribute(`data-show-${mode}`) !== 'true');
-        });
+        geometryLayers.forEach((layer) => layer.toggleAttribute('hidden', layer.dataset.geometryMode !== mode));
+        emptyStates.forEach((state) => state.toggleAttribute('hidden', state.dataset.genplanGeometryEmpty !== mode || state.dataset.hasGeometry === 'true'));
     };
 
     modeButtons.forEach((button) => button.addEventListener('click', () => renderMode(button.dataset.genplanMode)));

@@ -2681,6 +2681,25 @@ picture.home-developer__media img,
 
 .genplan-marker[hidden] { display: none; }
 
+.genplan-overlay [data-geometry-mode][hidden] { display: none; }
+
+.genplan-geometry-empty {
+    position: absolute;
+    z-index: 2;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: min(24rem, calc(100% - 2rem));
+    margin: 0;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 0.75rem 1rem;
+    color: var(--color-ink);
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
+.genplan-geometry-empty[hidden] { display: none; }
+
 .genplan-sidebar {
     display: flex;
     min-width: 0;
@@ -2741,6 +2760,7 @@ picture.home-developer__media img,
     font-size: clamp(2rem, 4vw, 3.5rem);
     font-weight: 400;
     line-height: 0.95;
+    overflow-wrap: anywhere;
     text-transform: uppercase;
 }
 
@@ -3197,7 +3217,7 @@ picture.home-developer__media img,
 .site-footer__grid { grid-template-columns: .7fr .7fr 1.25fr; }
 .footer-nav__title { font-weight: 400; }
 .site-footer__cta { margin-top: 1.5rem; }
-.site-footer__wordmark { display: block; margin-top: clamp(5rem, 10vw, 9rem); font-family: var(--font-display); font-size: clamp(3.6rem, 8.5vw, 7.2rem); font-weight: 400; letter-spacing: -0.065em; line-height: .8; text-align: center; white-space: nowrap; }
+.site-footer__wordmark { display: block; margin-top: clamp(5rem, 10vw, 9rem); font-family: var(--font-display); font-size: clamp(3.6rem, 7vw, 7.2rem); font-weight: 400; letter-spacing: -0.065em; line-height: .8; text-align: center; white-space: nowrap; }
 .site-footer__bottom { grid-template-columns: auto auto minmax(0, 1fr) auto; }
 .site-footer__credit { text-align: right; }
 

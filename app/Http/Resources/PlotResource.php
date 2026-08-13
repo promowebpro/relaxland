@@ -10,6 +10,8 @@ class PlotResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $geometry = $this->geometries->first();
+
         return [
             'id' => $this->id,
             'number' => $this->number,
@@ -18,11 +20,14 @@ class PlotResource extends JsonResource
             'price' => $this->price,
             'price_per_sotka' => $this->price_per_sotka,
             'status' => $this->status->value,
-            'polygon' => $this->polygon_data,
-            'marker' => [
-                'x' => $this->marker_x !== null ? (float) $this->marker_x : null,
-                'y' => $this->marker_y !== null ? (float) $this->marker_y : null,
-            ],
+            'geometry' => $geometry ? [
+                'mode' => $geometry->mode->value,
+                'polygon' => $geometry->polygon_data,
+                'marker' => [
+                    'x' => $geometry->marker_x !== null ? (float) $geometry->marker_x : null,
+                    'y' => $geometry->marker_y !== null ? (float) $geometry->marker_y : null,
+                ],
+            ] : null,
             'description' => $this->description,
             'image' => $this->image ? Storage::disk('public')->url($this->image) : null,
         ];

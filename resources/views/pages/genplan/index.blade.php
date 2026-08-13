@@ -8,8 +8,8 @@
     $disk = \Illuminate\Support\Facades\Storage::disk('public');
     $image3d = $genplan ? $disk->url($genplan->image_3d) : null;
     $image2d = $genplan ? $disk->url($genplan->image_2d) : null;
-    $mobileImage3d = $genplan?->mobile_image_3d ? $disk->url($genplan->mobile_image_3d) : null;
-    $mobileImage2d = $genplan?->mobile_image_2d ? $disk->url($genplan->mobile_image_2d) : null;
+    $mobileImage3d = $genplan?->mobile_image_3d && $genplan?->mobile_image_3d_is_compatible ? $disk->url($genplan->mobile_image_3d) : null;
+    $mobileImage2d = $genplan?->mobile_image_2d && $genplan?->mobile_image_2d_is_compatible ? $disk->url($genplan->mobile_image_2d) : null;
     $stageRatio = $genplan?->original_width && $genplan?->original_height
         ? $genplan->original_width.' / '.$genplan->original_height
         : '16 / 10';
@@ -38,7 +38,7 @@
                     <div class="genplan-toolbar">
                         <div>
                             <span class="eyebrow">{{ $genplan->name }}</span>
-                            <p>Геометрия кварталов одинакова для всех режимов.</p>
+                            <p>Каждый режим использует собственную геометрию своей проекции.</p>
                         </div>
                         <div class="genplan-mode-switch" aria-label="Вид генплана">
                             <button type="button" aria-pressed="false" data-genplan-mode="2d">2D</button>
@@ -58,35 +58,57 @@
                         >
                             <img src="{{ $image3d }}" alt="{{ $genplan->name }}, вид 3D" data-genplan-image>
                             <svg class="genplan-overlay" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-label="Кварталы и инфраструктура генплана">
-                                <g class="genplan-quarter-layer" aria-label="Кварталы">
-                                    @foreach ($genplan->quarters as $quarter)
-                                        <polygon
-                                            points="{{ $geometry->svgPoints($quarter->polygon_data) }}"
-                                            @class(['genplan-quarter', 'genplan-quarter--'.$quarter->status->value, 'is-selected' => $loop->first])
-                                            role="button"
-                                            tabindex="0"
-                                            aria-label="{{ $quarter->name }} — {{ $quarter->status->label() }}"
-                                            aria-pressed="{{ $loop->first ? 'true' : 'false' }}"
-                                            data-quarter-target="quarter-{{ $quarter->id }}"
-                                        />
-                                    @endforeach
-                                </g>
-                                <g class="genplan-marker-layer" aria-label="Объекты инфраструктуры">
-                                    @foreach ($infrastructure as $point)
-                                        <g
-                                            class="genplan-marker"
-                                            role="img"
-                                            aria-label="{{ $point->name }} — {{ $point->category->label() }}"
-                                            transform="translate({{ (float) $point->marker_x * 1000 }} {{ (float) $point->marker_y * 1000 }})"
-                                            data-show-2d="{{ $point->show_on_2d ? 'true' : 'false' }}"
-                                            data-show-3d="{{ $point->show_on_3d ? 'true' : 'false' }}"
-                                        >
-                                            <circle r="17" />
-                                            <text text-anchor="middle" dominant-baseline="central">•</text>
+                                @foreach (\App\Domain\Genplan\GenplanMode::cases() as $mode)
+                                    <g data-geometry-mode="{{ $mode->value }}" @if ($mode !== $defaultMode) hidden @endif>
+                                        <g class="genplan-quarter-layer" aria-label="Кварталы {{ $mode->label() }}">
+                                            @foreach ($genplan->quarters as $quarter)
+                                                @if ($quarterGeometry = $quarter->geometryFor($mode))
+                                                    <polygon
+                                                        points="{{ $geometry->svgPoints($quarterGeometry->polygon_data) }}"
+                                                        @class(['genplan-quarter', 'genplan-quarter--'.$quarter->status->value, 'is-selected' => $loop->first])
+                                                        role="button"
+                                                        tabindex="0"
+                                                        aria-label="{{ $quarter->name }} — {{ $quarter->status->label() }}, {{ $mode->label() }}"
+                                                        aria-pressed="{{ $loop->first ? 'true' : 'false' }}"
+                                                        data-quarter-target="quarter-{{ $quarter->id }}"
+                                                    />
+                                                @endif
+                                            @endforeach
                                         </g>
-                                    @endforeach
-                                </g>
+                                        <g class="genplan-marker-layer" aria-label="Объекты инфраструктуры {{ $mode->label() }}">
+                                            @foreach ($infrastructure as $point)
+                                                @php
+                                                    $pointGeometry = $point->geometryFor($mode);
+                                                    $showPoint = $mode === \App\Domain\Genplan\GenplanMode::TwoD ? $point->show_on_2d : $point->show_on_3d;
+                                                @endphp
+                                                @if ($pointGeometry && $showPoint)
+                                                    <g
+                                                        class="genplan-marker"
+                                                        role="img"
+                                                        aria-label="{{ $point->name }} — {{ $point->category->label() }}, {{ $mode->label() }}"
+                                                        transform="translate({{ (float) $pointGeometry->marker_x * 1000 }} {{ (float) $pointGeometry->marker_y * 1000 }})"
+                                                    >
+                                                        <circle r="17" />
+                                                        <text text-anchor="middle" dominant-baseline="central">•</text>
+                                                    </g>
+                                                @endif
+                                            @endforeach
+                                        </g>
+                                    </g>
+                                @endforeach
                             </svg>
+                            @foreach (\App\Domain\Genplan\GenplanMode::cases() as $mode)
+                                @php
+                                    $hasModeGeometry = $genplan->quarters->contains(fn ($quarter) => $quarter->geometryFor($mode))
+                                        || $infrastructure->contains(function ($point) use ($mode) {
+                                            $visible = $mode === \App\Domain\Genplan\GenplanMode::TwoD ? $point->show_on_2d : $point->show_on_3d;
+                                            return $visible && $point->geometryFor($mode);
+                                        });
+                                @endphp
+                                <p class="genplan-geometry-empty" data-genplan-geometry-empty="{{ $mode->value }}" data-has-geometry="{{ $hasModeGeometry ? 'true' : 'false' }}" @if ($mode !== $defaultMode || $hasModeGeometry) hidden @endif>
+                                    Геометрия {{ $mode->label() }} ещё не заполнена. Фон остаётся доступен без неверной подсветки.
+                                </p>
+                            @endforeach
                         </div>
 
                         <aside class="genplan-sidebar" aria-label="Кварталы">

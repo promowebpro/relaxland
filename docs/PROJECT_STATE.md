@@ -2,9 +2,9 @@
 
 ## Current Release
 
-Release 5 — Genplan Foundation: **IMPLEMENTED**.
+Release 5A — Genplan Multi-view Geometry Correction: **IMPLEMENTED**.
 
-Нормализованный geometry contract, Genplan/Quarter/Plot/InfrastructurePoint/SurroundingPlace, SVG overlay, Filament CRUD, controlled JSON API и SSR `/genplan` реализованы. Full Genplan interactions (Release 6), public Plot UI (Release 7) и полноценная Surroundings map (Release 8) не начинались.
+Нормализованный geometry contract скорректирован: Quarter/Plot/InfrastructurePoint остаются едиными бизнес-сущностями, но имеют независимую presentation geometry для `2d` и `3d`. Filament, controlled JSON API, SSR `/genplan` и JS mode switch работают без cross-mode fallback. Full Genplan interactions (Release 6), public Plot UI (Release 7) и полноценная Surroundings map (Release 8) не начинались.
 
 ## Completed Releases
 
@@ -84,7 +84,7 @@ Release 5 — Genplan Foundation: **IMPLEMENTED**.
 
 - Дата: 2026-08-13.
 - Добавлен компактный `Domain/Genplan` с пятью Eloquent models, controlled status/category enums, visibility scopes, geometry validator и public query service.
-- Genplan хранит 2D/3D и optional mobile backgrounds; Quarter/Plot/InfrastructurePoint используют одну normalized coordinate system `0..1` без display pixels и без дублирования geometry между режимами.
+- Genplan хранит 2D/3D и optional mobile backgrounds; в Foundation был введён normalized contract `0..1`, а ошибочное решение об общей geometry между режимами впоследствии заменено Release 5A.
 - `polygon_data` — ordered JSON list минимум из трёх объектов ровно `{x, y}`; validation выполняется в Filament и повторно в model saving hooks.
 - Публичный renderer преобразует geometry в безопасные SVG points внутри `viewBox 0 0 1000 1000`; arbitrary SVG/HTML из БД не поддерживается.
 - Реализован SSR `/genplan`: Genplan/Surroundings tabs, 2D/3D switch, SVG Quarter/Infrastructure layers, минимальный Quarter selection/card и controlled empty states.
@@ -94,6 +94,18 @@ Release 5 — Genplan Foundation: **IMPLEMENTED**.
 - Home preview и shared navigation ведут на активированный `genplan.index`; полный Genplan JS на Home не загружается.
 - Geometry contract зафиксирован в `docs/DECISIONS.md` (ADR-005), design state mapping и browser matrix — в `docs/VISUAL_QA.md`.
 - Итоговая автоматическая проверка: 77 tests / 436 assertions.
+
+### Release 5A — Genplan Multi-view Geometry Correction
+
+- Дата: 2026-08-13.
+- Presentation geometry вынесена из business tables в typed `quarter_geometries`, `plot_geometries` и `infrastructure_point_geometries` с enum `mode = 2d|3d` и DB unique `entity_id + mode`.
+- Forward migration переносит legacy geometry только в `3d`; неподтверждённая `2d` geometry не создаётся. Rollback восстанавливает legacy columns из `3d` records.
+- Filament показывает отдельные structured sections «Геометрия 3D» и «Геометрия 2D»; raw JSON и отдельные mobile geometries отсутствуют.
+- Public queries и API принимают controlled `mode`, по умолчанию используют `3d` и никогда не подставляют geometry другого режима.
+- SSR содержит оба mode-specific SVG layer, стартует в `3d`; JS одновременно меняет background и geometry layer, а отсутствующий слой очищается.
+- Mobile background разрешается только после явного compatibility confirmation для той же проекции/framing; без него используется desktop asset.
+- RBAC скорректирован: базовый `viewer` больше не получает `leads.view` и не видит PII заявок; `sales-manager` сохраняет Leads workflow.
+- Итоговая автоматическая проверка: 87 tests / 476 assertions.
 
 ## Current Architecture
 
@@ -130,10 +142,13 @@ Filament Shield не установлен и не требуется текущ�
 - `home_pages` — singleton-контент главной: именованные поля, ограниченные JSON-коллекции, publication и SEO.
 - `stories` — самостоятельные истории главной: media, текст, порядок, active state и timestamps.
 - `leads` — contact data, controlled source/form type, source page, session UTM, workflow status, nullable responsible user, manager comment и consent document snapshot; user/document deletion uses `SET NULL` without deleting the Lead.
-- `genplans` — name/slug, 2D/3D/mobile Storage paths, source dimensions, active state и reserved settings JSON.
-- `quarters` — Genplan FK, per-Genplan unique slug, enum status, normalized polygon/label coordinates, order и active state.
-- `plots` — Quarter FK, per-Quarter unique slug/number, decimal area/money, enum status, optional normalized geometry/marker, attributes и public visibility.
-- `infrastructure_points` — Genplan FK, controlled category, normalized marker, per-mode visibility, order и active state.
+- `genplans` — name/slug, 2D/3D/mobile Storage paths, source dimensions, explicit mobile compatibility flags, active state и reserved settings JSON.
+- `quarters` — Genplan FK, per-Genplan unique slug, enum status, order и active state; presentation geometry вынесена отдельно.
+- `plots` — Quarter FK, per-Quarter unique slug/number, decimal area/money, enum status, attributes и public visibility; presentation geometry вынесена отдельно.
+- `infrastructure_points` — Genplan FK, controlled category, per-mode visibility, order и active state; presentation geometry вынесена отдельно.
+- `quarter_geometries` — Quarter FK, typed mode, normalized polygon/label и unique `quarter_id + mode`.
+- `plot_geometries` — Plot FK, typed mode, optional normalized polygon/marker и unique `plot_id + mode`.
+- `infrastructure_point_geometries` — InfrastructurePoint FK, typed mode, normalized marker и unique `infrastructure_point_id + mode`.
 - `surrounding_places` — provider-neutral controlled category, decimal latitude/longitude, description/external URL, order и active state.
 - `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs` — инфраструктура Laravel.
 
@@ -151,7 +166,7 @@ Release 1 не добавлял новые permissions. Используются
 - `genplan.view`, `genplan.manage` для Genplan, Quarter, InfrastructurePoint и SurroundingPlace;
 - `plots.view`, `plots.manage` для Plot.
 
-`sales-manager` получает только `admin.access`, `leads.view`, `leads.update`. `viewer` имеет read-only `genplan.view` и `plots.view`; manage permissions автоматически никому не добавлялись. Super-admin сохраняет Gate-before полный доступ.
+`sales-manager` получает только `admin.access`, `leads.view`, `leads.update`. `viewer` имеет read-only content/settings/genplan/plots permissions, но не получает `leads.view` и не имеет доступа к PII заявок; manage permissions автоматически никому не добавлялись. Super-admin сохраняет Gate-before полный доступ.
 
 Фактическая матрица находится в `RolePermissionRegistrar` и синхронизируется seed-командой.
 
@@ -172,6 +187,7 @@ Release 1 не добавлял новые permissions. Используются
 - Main page — READY.
 - Leads — READY.
 - Genplan Foundation — READY.
+- Multi-view Geometry — READY.
 - Genplan Interactions — NOT STARTED (Release 6).
 - Plot domain/admin/API foundation — READY; public Plot UI — NOT STARTED (Release 7).
 - Surroundings domain/admin/API foundation — READY; full map — NOT STARTED (Release 8).
@@ -189,7 +205,7 @@ Release 1 не добавлял новые permissions. Используются
 - `blog.index`: `GET /blog`.
 - `blog.show`: `GET /blog/{slug}`.
 - `genplan.index`: `GET /genplan` — SSR Foundation/empty state.
-- `api.genplan.*`: read-only `GET /api/genplan`, Quarter, Quarter plots, Infrastructure и Surroundings resources.
+- `api.genplan.*`: read-only `GET /api/genplan`, Quarter, Quarter plots и Infrastructure принимают controlled `mode=2d|3d` (default `3d`, invalid mode → 422); Surroundings geometry mode не использует.
 - Неизвестные URL используют `resources/views/errors/404.blade.php` и сохраняют HTTP 404.
 
 Пункты Blog и Genplan в общем navigation config активированы. Для Plots и других будущих public разделов фиктивные routes/страницы не создавались.
@@ -235,7 +251,7 @@ Release 1 не добавлял новые permissions. Используются
 - Архитектура Home singleton/коллекций зафиксирована в `docs/DECISIONS.md` (ADR-002); Stories отделены от Home JSON.
 - Home Blog preview выбирает только необходимые поля и eager-loads category; публичные visibility scopes не дублируются.
 - Session first-touch UTM и snapshot юридического согласия являются долгосрочным Lead contract; решение зафиксировано в `docs/DECISIONS.md` (ADR-004).
-- Normalized Genplan geometry `0..1`, exact polygon shape и безопасный SVG mapping являются долгосрочным contract; решение зафиксировано в `docs/DECISIONS.md` (ADR-005).
+- Normalized Genplan geometry `0..1`, view-specific `2d|3d` records, запрет cross-mode fallback, exact polygon shape и безопасный SVG mapping являются долгосрочным contract; решение зафиксировано в `docs/DECISIONS.md` (ADR-005).
 
 ## Protected / Existing Functionality
 
@@ -263,7 +279,7 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Known Technical Debt
 
-- MySQL 8+ недоступен в текущем окружении (`127.0.0.1:3306`), поэтому миграции Release 0–5 проверены только на SQLite. Новая migration использует portable Laravel schema API, JSON, DECIMAL и FK `RESTRICT`, но перед production обязателен `migrate:fresh --seed` на MySQL 8+.
+- MySQL 8+ недоступен в текущем окружении (`127.0.0.1:3306`), поэтому миграции Release 0–5A проверены только на SQLite. Корректирующая migration использует portable Laravel schema/query API, JSON, DECIMAL и FK, но перед production обязателен полный migration/rollback check на MySQL 8+.
 - Production mail transport/получатель не настроены; уведомления о новых Leads намеренно отложены вместо фиктивного mail flow. Заявка сохраняется и сразу доступна в Filament.
 - Постоянный картографический provider не выбран; Contacts использует безопасный presentation fallback без API key.
 - Контакты, координаты, route links и юридические документы должны быть заполнены фактическими данными через Filament.
@@ -281,10 +297,11 @@ Release 1 не добавлял новые permissions. Используются
 - Release 3: real root Home, Settings reuse, active/inactive Home and Stories, stable Story order, public-only Blog preview, fixed collection sanitization, Filament access и crafted publication bypass protection.
 - Release 3A: About route, отсутствие будущих product routes, public visual regression на всех major pages и шести viewport widths.
 - Release 4 public: создание/redirect, required/conditional validation, enum contracts, phone normalization, consent snapshot, safe page URL, first-touch UTM, honeypot, rate limit, repeat submissions и CTA integration.
-- Release 4 admin: unauth/permission access, sales-manager list/view/update, read-only viewer, enum status, eligible assignment и XSS-safe message/comment rendering.
+- Release 4 admin: unauth/permission access, sales-manager list/view/update, read-only access только при явно выданном `leads.view`, enum status, eligible assignment и XSS-safe message/comment rendering.
 - Release 5 domain: normalized coordinate boundaries, malformed/short polygons, deterministic SVG serialization, decimal money precision и enum rejection.
 - Release 5 public/API: SSR/empty state, active Genplan, inactive Quarter, hidden Plot, mode-specific Infrastructure, inactive Surroundings, controlled DTO fields и read-only routes.
 - Release 5 admin: unauthenticated/role access, view/manage separation, all five CRUD routes, invalid Repeater geometry и protected parent deletion.
+- Release 5A: mode uniqueness/enum, независимые 2D/3D coordinates, отсутствие fallback, API default/validation, SSR layer clearing, dual-mode Filament save, mobile compatibility guard, forward/rollback legacy migration и отсутствие Leads у viewer.
 - Полный Release 0 regression suite сохранён и проходит.
 
 ## Pending Work
@@ -299,11 +316,12 @@ Release 1 не добавлял новые permissions. Используются
 - `composer audit --locked` — PASS, advisories отсутствуют.
 - После временных timeout/502 Packagist повторный строгий `composer audit --locked` завершился успешно; advisories отсутствуют.
 - `npm audit --audit-level=moderate` — PASS, 0 vulnerabilities.
-- `php artisan test` — PASS, 77 tests / 436 assertions после Release 5.
+- `php artisan test` — PASS, 87 tests / 476 assertions после Release 5A.
 - `php artisan migrate:fresh --seed` — PASS на SQLite.
 - rollback двух Home/Story migrations, повторное применение и финальный fresh/seed — PASS на SQLite.
 - Release 4 `migrate:fresh --seed`, rollback Leads migration и повторный migrate — PASS на SQLite; `assigned_to`/`privacy_document_id` используют `SET NULL`, обязательные индексы присутствуют.
 - Release 5 `migrate:fresh --seed`, rollback `2026_08_13_150000_create_genplan_foundation_tables` и повторный migrate — PASS на отдельной SQLite verification DB; production/local data не очищались.
+- Release 5A forward migration legacy→`3d`, отсутствие автоматического `2d`, rollback `3d`→legacy и повторный migrate — PASS в integration test и на отдельной SQLite verification DB.
 - `vendor/bin/pint` и `vendor/bin/pint --test` — PASS.
 - `npm run build` — PASS, Vite 7.3.6.
 - `php artisan view:cache` — PASS.
@@ -323,4 +341,4 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Last Updated
 
-2026-08-13 — реализован Release 5 Genplan Foundation: normalized geometry ADR, five-model schema, protected Filament CRUD, SSR/SVG 2D/3D shell, controlled API, Home/navigation integration, responsive browser QA и полный regression suite; Release 6 не начинался.
+2026-08-13 — Release 5A исправил архитектурную ошибку общей 2D/3D geometry: добавлены view-specific typed tables, безопасная legacy migration/rollback, отдельные Filament sections, mode-aware API/SSR/JS без fallback, mobile framing guard и запрет Leads PII для viewer; Release 6 не начинался.

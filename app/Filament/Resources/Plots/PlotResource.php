@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\Plots;
 
+use App\Domain\Genplan\GenplanMode;
 use App\Domain\Genplan\Plot;
 use App\Domain\Genplan\PlotStatus;
 use App\Domain\Genplan\Rules\NormalizedCoordinate;
+use App\Domain\Genplan\Rules\NormalizedPolygon;
 use App\Filament\Resources\Plots\Pages\CreatePlot;
 use App\Filament\Resources\Plots\Pages\EditPlot;
 use App\Filament\Resources\Plots\Pages\ListPlots;
@@ -60,14 +62,10 @@ class PlotResource extends Resource
                 Toggle::make('is_visible')->label('Показывать публично')->default(false),
                 Textarea::make('description')->label('Описание')->rows(4)->maxLength(5000)->columnSpanFull(),
                 FileUpload::make('image')->label('Изображение')->disk('public')->directory('genplan/plots')->image()->maxSize(15360),
-                $coordinate('marker_x', 'Marker X'), $coordinate('marker_y', 'Marker Y'),
                 KeyValue::make('attributes')->label('Атрибуты')->keyLabel('Название')->valueLabel('Значение')->columnSpanFull(),
             ]),
-            Section::make('Полигон участка')->description('Необязательный foundation до Release 7. Минимум три точки.')->schema([
-                Repeater::make('polygon_data')->label('Точки')->minItems(3)->columns(2)->schema([
-                    $coordinate('x', 'X')->required(), $coordinate('y', 'Y')->required(),
-                ])->addActionLabel('Добавить точку')->reorderable(),
-            ]),
+            self::geometrySection(GenplanMode::TwoD, $coordinate),
+            self::geometrySection(GenplanMode::ThreeD, $coordinate),
         ]);
     }
 
@@ -83,6 +81,22 @@ class PlotResource extends Resource
     private static function enumOptions(): array
     {
         return collect(PlotStatus::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()])->all();
+    }
+
+    private static function geometrySection(GenplanMode $mode, callable $coordinate): Section
+    {
+        $prefix = "geometry_{$mode->value}";
+
+        return Section::make("Геометрия участка {$mode->label()}")
+            ->description("Необязательная geometry для projection space {$mode->label()}; polygon минимум три точки.")
+            ->columns(2)
+            ->schema([
+                $coordinate("{$prefix}_marker_x", 'Marker X')->requiredWith("{$prefix}_marker_y"),
+                $coordinate("{$prefix}_marker_y", 'Marker Y')->requiredWith("{$prefix}_marker_x"),
+                Repeater::make("{$prefix}_polygon_data")->label("Полигон {$mode->label()}")->rule(new NormalizedPolygon(true))->columns(2)->schema([
+                    $coordinate('x', 'X')->required(), $coordinate('y', 'Y')->required(),
+                ])->addActionLabel('Добавить точку')->reorderable()->columnSpanFull(),
+            ]);
     }
 
     public static function getPages(): array

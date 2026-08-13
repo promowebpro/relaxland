@@ -14,6 +14,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -49,6 +50,12 @@ class GenplanResource extends Resource
                 $upload('image_2d', 'Изображение 2D')->required(),
                 $upload('mobile_image_3d', 'Мобильное изображение 3D'),
                 $upload('mobile_image_2d', 'Мобильное изображение 2D'),
+                Toggle::make('mobile_image_3d_is_compatible')->label('Mobile 3D совместим с canvas 3D')
+                    ->accepted(fn (Get $get): bool => filled($get('mobile_image_3d')))
+                    ->helperText('Подтвердите только если проекция и framing совпадают с desktop 3D.'),
+                Toggle::make('mobile_image_2d_is_compatible')->label('Mobile 2D совместим с canvas 2D')
+                    ->accepted(fn (Get $get): bool => filled($get('mobile_image_2d')))
+                    ->helperText('Подтвердите только если проекция и framing совпадают с desktop 2D.'),
                 TextInput::make('original_width')->label('Исходная ширина')->numeric()->integer()->minValue(1),
                 TextInput::make('original_height')->label('Исходная высота')->numeric()->integer()->minValue(1),
                 Toggle::make('is_active')->label('Активен')->default(false),
