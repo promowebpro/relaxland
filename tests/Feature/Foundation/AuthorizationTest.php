@@ -76,10 +76,6 @@ class AuthorizationTest extends TestCase
             PermissionName::AdminAccess,
             PermissionName::LeadsView,
             PermissionName::LeadsUpdate,
-            PermissionName::GenplanView,
-            PermissionName::GenplanManage,
-            PermissionName::PlotsView,
-            PermissionName::PlotsManage,
         ] as $permission) {
             $this->assertTrue($user->can($permission->value));
         }
@@ -89,6 +85,10 @@ class AuthorizationTest extends TestCase
             PermissionName::RolesView,
             PermissionName::ContentUpdate,
             PermissionName::SettingsManage,
+            PermissionName::GenplanView,
+            PermissionName::GenplanManage,
+            PermissionName::PlotsView,
+            PermissionName::PlotsManage,
         ] as $permission) {
             $this->assertFalse($user->can($permission->value));
         }

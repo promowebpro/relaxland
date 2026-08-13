@@ -45,7 +45,7 @@ class PublicPagesTest extends TestCase
 
     public function test_release_three_a_does_not_expose_future_product_routes(): void
     {
-        foreach (['/leads', '/genplan', '/plots', '/surroundings'] as $path) {
+        foreach (['/genplan', '/plots', '/surroundings'] as $path) {
             $this->get($path)->assertNotFound();
         }
     }

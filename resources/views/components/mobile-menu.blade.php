@@ -35,6 +35,13 @@
             @endif
         </div>
 
-        <x-button :href="$phoneHref" :disabled="! $phoneHref" variant="accent">Позвонить мечте</x-button>
+        <x-button
+            href="#lead-form"
+            variant="accent"
+            data-lead-modal-trigger
+            data-lead-source="header"
+            data-lead-form-type="callback"
+            data-lead-heading="Заказать обратный звонок"
+        >Позвонить мечте</x-button>
     </div>
 </div>

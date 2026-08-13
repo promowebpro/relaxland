@@ -93,3 +93,89 @@ document.querySelectorAll('[data-season-tabs]').forEach((tabs) => {
         });
     });
 });
+
+const leadModal = document.querySelector('[data-lead-modal]');
+
+if (leadModal) {
+    const dialog = leadModal.querySelector('[role="dialog"]');
+    const sourceInput = leadModal.querySelector('[data-lead-source]');
+    const formTypeInput = leadModal.querySelector('[data-lead-form-type]');
+    const headingInput = leadModal.querySelector('[data-lead-form-heading]');
+    const title = leadModal.querySelector('[data-lead-modal-title]');
+    const nameInput = leadModal.querySelector('[data-lead-name]');
+    let previousFocus = null;
+
+    const focusableElements = () => [...dialog.querySelectorAll('a[href], button:not([disabled]), input:not([type="hidden"]):not([tabindex="-1"]), textarea')]
+        .filter((element) => !element.hasAttribute('disabled'));
+
+    const closeModal = () => {
+        leadModal.classList.remove('is-open');
+        document.body.classList.remove('has-open-modal');
+
+        if (window.location.hash === '#lead-form') {
+            window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+        }
+
+        previousFocus?.focus();
+    };
+
+    const openModal = (trigger = null) => {
+        previousFocus = trigger || document.activeElement;
+
+        if (trigger) {
+            sourceInput.value = trigger.dataset.leadSource || sourceInput.value;
+            formTypeInput.value = trigger.dataset.leadFormType || formTypeInput.value;
+            const heading = trigger.dataset.leadHeading || 'Давайте знакомиться';
+            title.textContent = heading;
+            headingInput.value = heading;
+        }
+
+        nameInput.required = ['visit', 'consultation'].includes(formTypeInput.value);
+        nameInput.setAttribute('aria-required', nameInput.required ? 'true' : 'false');
+        leadModal.classList.add('is-open');
+        document.body.classList.add('has-open-modal');
+        window.history.replaceState(null, '', '#lead-form');
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => dialog.focus({ preventScroll: true }));
+        });
+    };
+
+    document.querySelectorAll('[data-lead-modal-trigger]').forEach((trigger) => {
+        trigger.addEventListener('click', (event) => {
+            event.preventDefault();
+            openModal(trigger);
+        });
+    });
+
+    leadModal.querySelectorAll('[data-lead-modal-close]').forEach((control) => {
+        control.addEventListener('click', closeModal);
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (!leadModal.classList.contains('is-open')) return;
+
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeModal();
+            return;
+        }
+
+        if (event.key !== 'Tab') return;
+
+        const focusable = focusableElements();
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first?.focus();
+        }
+    });
+
+    if (leadModal.hasAttribute('data-lead-open-on-load') || window.location.hash === '#lead-form') {
+        openModal();
+    }
+}

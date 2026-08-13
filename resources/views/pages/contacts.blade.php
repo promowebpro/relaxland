@@ -17,7 +17,6 @@
         'Google Maps' => $settings['routes.google'],
         '2GIS' => $settings['routes.two_gis'],
     ];
-    $ctaPhone = $salesPhone ?: $primaryPhone;
 @endphp
 
 @section('content')
@@ -147,7 +146,14 @@
                     <span class="eyebrow">Запланировать визит</span>
                     <h2>Запишитесь на знакомство с посёлком</h2>
                 </div>
-                <x-button :href="\App\Domain\Settings\SiteSettings::phoneHref($ctaPhone)" :disabled="! $ctaPhone" variant="accent">
+                <x-button
+                    href="#lead-form"
+                    variant="accent"
+                    data-lead-modal-trigger
+                    data-lead-source="contacts"
+                    data-lead-form-type="visit"
+                    data-lead-heading="Записаться на знакомство"
+                >
                     Записаться
                 </x-button>
             </div>

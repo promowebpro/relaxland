@@ -43,7 +43,15 @@
                         @endif
                     </ul>
                     @if ($loop->first)
-                        <x-button :href="$phoneHref" :disabled="! $phoneHref" variant="light" class="site-footer__cta">Позвонить мечте</x-button>
+                        <x-button
+                            href="#lead-form"
+                            variant="light"
+                            class="site-footer__cta"
+                            data-lead-modal-trigger
+                            data-lead-source="footer"
+                            data-lead-form-type="callback"
+                            data-lead-heading="Заказать обратный звонок"
+                        >Позвонить мечте</x-button>
                     @endif
                 </nav>
             @endforeach

@@ -2,9 +2,9 @@
 
 ## Current Release
 
-Release 3A — Visual Integration & Design Audit: **IMPLEMENTED**.
+Release 4 — Leads / продажи: **IMPLEMENTED**.
 
-Release 3 завершён: главная, Home content editor и Stories реализованы. Полученные утверждённые макеты из `docs/design/` проходят интеграцию и responsive-аудит в Release 3A. Leads и интерактивный Genplan не начинались.
+Единый публичный Lead flow, session first-touch UTM, consent snapshot, anti-spam, Filament workflow и права отдела продаж реализованы. Интерактивный Genplan и все сущности Release 5 не начинались.
 
 ## Completed Releases
 
@@ -67,13 +67,26 @@ Release 3 завершён: главная, Home content editor и Stories ре�
 - Leads, Genplan domain/interactions, Plots и Surroundings не начинались.
 - Итоговая автоматическая проверка: 45 tests / 238 assertions.
 
+### Release 4 — Leads / Sales Workflow
+
+- Дата: 2026-08-13.
+- Добавлен отдельный `Domain/Leads` с контролируемыми source/form type/status enum, нормализацией телефона, action создания, policy и выборкой допустимых ответственных.
+- `POST /leads` принимает единую Blade-форму, выполняет server-side validation, CSRF, honeypot и rate limit 5 запросов в минуту на IP, после успеха перенаправляет на существующий `/thanks`.
+- UTM сохраняется по session first-touch контракту: первое непустое значение каждого поддерживаемого UTM-поля не перезаписывается до завершения сессии.
+- Обязательное согласие фиксируется временем, текущим публичным Personal Data Consent с fallback на Privacy Policy и строковым snapshot версии документа.
+- Одна доступная modal/form infrastructure подключена к Header, mobile menu, Footer, Home visit/CTA, Contacts и About; телефонные ссылки остаются отдельными `tel:` действиями.
+- Filament `/admin/leads` предоставляет list/view/edit status, assignment и manager comment без публичного create/delete; добавлены поиск, фильтры и диапазон дат.
+- `sales-manager` ограничен `admin.access`, `leads.view`, `leads.update`; ответственный выбирается только среди активных пользователей с `leads.update`.
+- Email/SMS notification намеренно отложены: production mail provider в проекте не настроен, а минимальный надёжный workflow уже обеспечивают БД и Filament.
+- Итоговая автоматическая проверка: 63 tests / 343 assertions.
+
 ## Current Architecture
 
 - Laravel/Blade приложение находится в корне репозитория; документация — в `docs/`.
 - Публичный frontend использует Blade, Vite, Tailwind 4 и собственный согласованный CSS-слой; SPA отсутствует.
 - Filament остаётся отдельной административной панелью `/admin` и не импортируется публичным Vite bundle.
 - Spatie Permission является единственным источником ролей и permissions.
-- Используемые домены: `Domain/Users`, `Domain/Settings`, `Domain/Content`, `Domain/Blog`, `Domain/Home`.
+- Используемые домены: `Domain/Users`, `Domain/Settings`, `Domain/Content`, `Domain/Blog`, `Domain/Home`, `Domain/Leads`.
 - Policies обеспечивают серверные проверки; видимость UI не заменяет авторизацию.
 - Целевая БД — MySQL 8+; автоматические тесты и текущая проверка миграций используют SQLite.
 
@@ -101,9 +114,10 @@ Filament Shield не установлен и не требуется текущ�
 - `blog_posts` — category FK, unique slug, listing fields, Storage paths, structured JSON content, publication/SEO fields и timestamps.
 - `home_pages` — singleton-контент главной: именованные поля, ограниченные JSON-коллекции, publication и SEO.
 - `stories` — самостоятельные истории главной: media, текст, порядок, active state и timestamps.
+- `leads` — contact data, controlled source/form type, source page, session UTM, workflow status, nullable responsible user, manager comment и consent document snapshot; user/document deletion uses `SET NULL` without deleting the Lead.
 - `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs` — инфраструктура Laravel.
 
-Таблицы Leads, Genplan, Plots и Surroundings не создавались.
+Таблицы Genplan, Plots и Surroundings не создавались.
 
 ## Roles & Permissions
 
@@ -114,6 +128,10 @@ Release 1 не добавлял новые permissions. Используются
 - `settings.view`, `settings.manage` для настроек сайта;
 - `content.view`, `content.create`, `content.update`, `content.delete`, `content.publish` для LegalDocument, Blog, Home и Stories;
 - `admin.access` для входа в Filament.
+- `leads.view` для списка и detail заявок;
+- `leads.update` для status, assignment и manager comment.
+
+`sales-manager` получает только `admin.access`, `leads.view`, `leads.update`. `viewer` может просматривать Leads, но не изменять их. Super-admin сохраняет Gate-before полный доступ.
 
 Фактическая матрица находится в `RolePermissionRegistrar` и синхронизируется seed-командой.
 
@@ -132,7 +150,7 @@ Release 1 не добавлял новые permissions. Используются
 - About — READY.
 - Blog — READY.
 - Main page — READY.
-- Leads — NOT STARTED.
+- Leads — READY.
 - Genplan / Plots / Surroundings — NOT STARTED.
 - Full SEO module — NOT STARTED.
 
@@ -144,6 +162,7 @@ Release 1 не добавлял новые permissions. Используются
 - `legal.index`: `GET /privacy`.
 - `legal.show`: `GET /privacy/{slug}`.
 - `success`: `GET /thanks`.
+- `leads.store`: `POST /leads` — единый endpoint публичных заявок; отдельной публичной страницы/GET API Leads нет.
 - `blog.index`: `GET /blog`.
 - `blog.show`: `GET /blog/{slug}`.
 - Неизвестные URL используют `resources/views/errors/404.blade.php` и сохраняют HTTP 404.
@@ -158,6 +177,7 @@ Release 1 не добавлял новые permissions. Используются
 - `/admin/blog-posts` — статьи, структурированные blocks, media, publication и SEO.
 - `/admin/home` — именованные секции и повторяемые коллекции главной, SEO и публикация.
 - `/admin/stories` — истории, media, сортировка и active visibility.
+- `/admin/leads` — newest-first список, поиск по name/phone/email, filters status/source/form type/manager/date, безопасный detail и ограниченное редактирование workflow-полей.
 - Публикационные поля и действия дополнительно ограничены `content.publish`.
 - Существующие `/admin/users` и `/admin/roles` сохранены.
 
@@ -165,6 +185,7 @@ Release 1 не добавлял новые permissions. Используются
 
 - `resources/views/layouts/public.blade.php`.
 - `site-header`, `mobile-menu`, `site-footer`, `breadcrumbs`, `button`.
+- `lead-modal` — единственная reusable форма заявок с contextual source/form type/heading, progressive hash fallback, focus trap, Escape, focus restore и body scroll lock.
 - `components/form/input.blade.php` как foundation будущих форм.
 - `blog-card`, `pagination`, `article-image` для публичного Blog.
 - `responsive-image` и фиксированная `pages/home.blade.php` для главной.
@@ -186,6 +207,7 @@ Release 1 не добавлял новые permissions. Используются
 - Listing выбирает только необходимые поля без полного content JSON и eager-loads category.
 - Архитектура Home singleton/коллекций зафиксирована в `docs/DECISIONS.md` (ADR-002); Stories отделены от Home JSON.
 - Home Blog preview выбирает только необходимые поля и eager-loads category; публичные visibility scopes не дублируются.
+- Session first-touch UTM и snapshot юридического согласия являются долгосрочным Lead contract; решение зафиксировано в `docs/DECISIONS.md` (ADR-004).
 
 ## Protected / Existing Functionality
 
@@ -199,6 +221,8 @@ Release 1 не добавлял новые permissions. Используются
 - Неактивные/будущие LegalDocument не доступны публично.
 - Draft, future posts и статьи неактивных категорий не доступны публично.
 - `content.publish` защищён server-side: crafted Filament state не позволяет менять status/published_at без permission.
+- Public Lead creation не принимает status, assignment или manager comment; source/form type/status ограничены enum, source URL очищается до текущего host/path, PII не пишется в logs и не публикуется через API.
+- Lead create/delete недоступны из Filament; update защищён Policy и повторной server-side проверкой допустимого ответственного.
 
 ## Design Assets
 
@@ -209,7 +233,8 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Known Technical Debt
 
-- MySQL 8+ недоступен в текущем окружении (`127.0.0.1:3306`), поэтому миграции Release 0–3 проверены только на SQLite. Перед production обязателен `migrate:fresh --seed` на MySQL 8+.
+- MySQL 8+ недоступен в текущем окружении (`127.0.0.1:3306`), поэтому миграции Release 0–4 проверены только на SQLite. Перед production обязателен `migrate:fresh --seed` на MySQL 8+.
+- Production mail transport/получатель не настроены; уведомления о новых Leads намеренно отложены вместо фиктивного mail flow. Заявка сохраняется и сразу доступна в Filament.
 - Постоянный картографический provider не выбран; Contacts использует безопасный presentation fallback без API key.
 - Контакты, координаты, route links и юридические документы должны быть заполнены фактическими данными через Filament.
 - Точный фирменный display-font и отдельный исходник иллюстрации 404 отсутствуют; используются системный serif fallback и типографическая композиция до передачи исходников.
@@ -224,12 +249,14 @@ Release 1 не добавлял новые permissions. Используются
 - Release 2: visibility, category/search/date filters, pagination query preservation, previous/next, structured blocks, XSS, SEO и admin publication bypass protection.
 - Release 3: real root Home, Settings reuse, active/inactive Home and Stories, stable Story order, public-only Blog preview, fixed collection sanitization, Filament access и crafted publication bypass protection.
 - Release 3A: About route, отсутствие будущих product routes, public visual regression на всех major pages и шести viewport widths.
+- Release 4 public: создание/redirect, required/conditional validation, enum contracts, phone normalization, consent snapshot, safe page URL, first-touch UTM, honeypot, rate limit, repeat submissions и CTA integration.
+- Release 4 admin: unauth/permission access, sales-manager list/view/update, read-only viewer, enum status, eligible assignment и XSS-safe message/comment rendering.
 - Полный Release 0 regression suite сохранён и проходит.
 
 ## Pending Work
 
-- Следующий этап по SPEC — Release 4 Leads, только после отдельного задания.
-- Затем остаются Releases 5–9: Genplan foundation/interactions, Plots, Surroundings, production QA/SEO.
+- Следующий этап по SPEC — Release 5 Genplan Foundation, только после отдельного задания.
+- Затем остаются Releases 6–9: Genplan interactions, Plots, Surroundings, production QA/SEO.
 - До production: MySQL 8+ migration check, реальные settings/legal/blog data, exact display-font и standalone 404 mascot при их передаче.
 
 ## Last Verification
@@ -238,9 +265,10 @@ Release 1 не добавлял новые permissions. Используются
 - `composer audit --locked` — PASS, advisories отсутствуют.
 - После временных timeout/502 Packagist повторный строгий `composer audit --locked` завершился успешно; advisories отсутствуют.
 - `npm audit --audit-level=moderate` — PASS, 0 vulnerabilities.
-- `php artisan test` — PASS, 45 tests / 238 assertions.
+- `php artisan test` — PASS, 63 tests / 343 assertions после Release 4.
 - `php artisan migrate:fresh --seed` — PASS на SQLite.
 - rollback двух Home/Story migrations, повторное применение и финальный fresh/seed — PASS на SQLite.
+- Release 4 `migrate:fresh --seed`, rollback Leads migration и повторный migrate — PASS на SQLite; `assigned_to`/`privacy_document_id` используют `SET NULL`, обязательные индексы присутствуют.
 - `vendor/bin/pint` и `vendor/bin/pint --test` — PASS.
 - `npm run build` — PASS, Vite 7.3.6.
 - `php artisan view:cache` — PASS.
@@ -250,10 +278,11 @@ Release 1 не добавлял новые permissions. Используются
 - Mobile menu keyboard/focus flow — PASS.
 - Browser QA Release 3A: Home, About, Blog, Article, Contacts, Privacy, Success и 404 на 360/390/768/1024/1280/1440 — PASS; zero horizontal overflow, zero broken images, console errors отсутствуют.
 - Browser interactions: mobile menu open/Escape close/body scroll lock и seasons tab state — PASS.
+- Browser QA Release 4: reusable modal, context, validation, consent, keyboard/focus, success redirect, public CTAs и Filament Leads проверены на 360/390/768/1024/1280/1440; zero horizontal overflow и console errors.
 - В публичных Vite assets нет ссылок на Filament — PASS.
 - `.env`, `public/build`, `public/storage` игнорируются git — PASS.
 - MySQL `127.0.0.1:3306` — UNAVAILABLE.
 
 ## Last Updated
 
-2026-08-11 — реализован Release 3A: approved design integration, extracted WebP assets, About, responsive browser matrix, interaction checks и полный regression suite; Release 4 не начинался.
+2026-08-13 — реализован Release 4: единый Lead capture, UTM/consent contracts, anti-spam, Filament sales workflow, RBAC, responsive/browser QA и полный regression suite; Release 5 не начинался.

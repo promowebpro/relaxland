@@ -43,7 +43,17 @@
                 <p class="section-label">Познакомимся?</p>
                 <h2 id="about-visit-title">Приезжайте в RelaxLand</h2>
                 <p>{{ $settings['contacts.village_address'] ?: 'Можайский городской округ' }}</p>
-                <x-button :href="route('contacts')" variant="primary">Как добраться</x-button>
+                <div class="about-map__actions">
+                    <x-button
+                        href="#lead-form"
+                        variant="primary"
+                        data-lead-modal-trigger
+                        data-lead-source="about"
+                        data-lead-form-type="visit"
+                        data-lead-heading="Записаться на знакомство"
+                    >Записаться</x-button>
+                    <x-button :href="route('contacts')" variant="outline">Как добраться</x-button>
+                </div>
             </div>
         </div>
     </section>

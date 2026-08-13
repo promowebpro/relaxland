@@ -173,7 +173,14 @@
         <div class="site-container home-callout__inner">
             <h2>{{ $home->cta_title }}</h2>
             @if ($home->cta_text)<p>{{ $home->cta_text }}</p>@endif
-            <x-button href="#visit" variant="accent">Выбрать время</x-button>
+            <x-button
+                href="#lead-form"
+                variant="accent"
+                data-lead-modal-trigger
+                data-lead-source="home"
+                data-lead-form-type="visit"
+                data-lead-heading="Выбрать время для визита"
+            >Выбрать время</x-button>
         </div>
     </section>
 
@@ -261,7 +268,17 @@
                     <p><span>Режим работы</span>{{ $settings['contacts.working_hours'] }}</p>
                 @endif
                 <div class="home-visit__actions">
-                    <x-button :href="$phoneHref" :disabled="! $phoneHref" variant="accent">{{ $phone ?: 'Телефон не указан' }}</x-button>
+                    <x-button
+                        href="#lead-form"
+                        variant="accent"
+                        data-lead-modal-trigger
+                        data-lead-source="home"
+                        data-lead-form-type="visit"
+                        data-lead-heading="Записаться на экскурсию"
+                    >Записаться на экскурсию</x-button>
+                    @if ($phoneHref)
+                        <x-button :href="$phoneHref" variant="outline">{{ $phone }}</x-button>
+                    @endif
                     <x-button :href="route('contacts')" variant="outline">Контакты и маршрут</x-button>
                 </div>
                 @if ($routeLinks->isNotEmpty())

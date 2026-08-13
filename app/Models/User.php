@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Domain\Leads\Lead;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -58,5 +60,10 @@ class User extends Authenticatable implements FilamentUser
         return $panel->getId() === 'admin'
             && $this->is_active
             && $this->can('admin.access');
+    }
+
+    public function assignedLeads(): HasMany
+    {
+        return $this->hasMany(Lead::class, 'assigned_to');
     }
 }

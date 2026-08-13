@@ -30,10 +30,6 @@ class RolePermissionRegistrar
                 PermissionName::AdminAccess->value,
                 PermissionName::LeadsView->value,
                 PermissionName::LeadsUpdate->value,
-                PermissionName::GenplanView->value,
-                PermissionName::GenplanManage->value,
-                PermissionName::PlotsView->value,
-                PermissionName::PlotsManage->value,
             ],
             RoleName::Viewer->value => [
                 PermissionName::AdminAccess->value,

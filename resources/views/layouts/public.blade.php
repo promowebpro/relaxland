@@ -45,5 +45,6 @@
         </main>
 
         <x-site-footer :settings="$settings" />
+        <x-lead-modal />
     </body>
 </html>
