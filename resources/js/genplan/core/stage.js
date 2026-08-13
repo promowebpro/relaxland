@@ -1,60 +1,76 @@
-const selectResponsiveImage = (stage, mode) => {
-    const mobile = window.matchMedia('(max-width: 47.99rem)').matches;
+const responsiveImage = (stage, mode) => {
+    const isMobile = window.matchMedia('(max-width: 47.99rem)').matches;
     const mobileSource = stage.getAttribute(`data-mobile-image-${mode}`);
 
     return {
-        source: mobile && mobileSource ? mobileSource : stage.getAttribute(`data-image-${mode}`),
-        usesMobileBackground: mobile && Boolean(mobileSource),
+        source: isMobile && mobileSource ? mobileSource : stage.getAttribute(`data-image-${mode}`),
+        mobile: isMobile && Boolean(mobileSource),
     };
 };
 
-export const initializeStage = (root) => {
+export const createStage = (root) => {
     const stage = root.querySelector('[data-genplan-stage]');
+    const quarterTriggers = [...root.querySelectorAll('[data-quarter-trigger]')];
+    const pointTriggers = [...root.querySelectorAll('[data-point-trigger]')];
+    const modeControls = [...root.querySelectorAll('[data-genplan-mode]')];
+    const panels = [...root.querySelectorAll('[data-genplan-panel]')];
+    const tabs = [...root.querySelectorAll('[data-genplan-view]')];
+    const layers = stage ? [...stage.querySelectorAll('[data-geometry-mode]')] : [];
+    const emptyStates = stage ? [...stage.querySelectorAll('[data-genplan-geometry-empty]')] : [];
+    const cards = [...root.querySelectorAll('[data-quarter-card], [data-point-card]')];
+    const selectionEmpty = root.querySelector('[data-selection-empty]');
+    const image = stage?.querySelector('[data-genplan-image]');
 
-    if (!stage) return;
+    const hasQuarter = (slug, mode) => quarterTriggers.some((trigger) => trigger.dataset.quarterSlug === slug
+        && (trigger.dataset.triggerMode === mode || trigger.dataset.quarterModes?.split(',').includes(mode)));
+    const hasPoint = (slug, mode) => pointTriggers.some((trigger) => trigger.dataset.pointSlug === slug && trigger.dataset.triggerMode === mode);
+    const hasAnyGeometry = (mode) => emptyStates.find((item) => item.dataset.genplanGeometryEmpty === mode)?.dataset.hasGeometry === 'true';
 
-    const image = stage.querySelector('[data-genplan-image]');
-    const modeButtons = [...root.querySelectorAll('[data-genplan-mode]')];
-    const geometryLayers = [...stage.querySelectorAll('[data-geometry-mode]')];
-    const emptyStates = [...stage.querySelectorAll('[data-genplan-geometry-empty]')];
-    let mode = modeButtons.find((button) => button.getAttribute('aria-pressed') === 'true')?.dataset.genplanMode || '3d';
+    const render = (state) => {
+        root.dataset.loading = state.loading ? 'true' : 'false';
+        root.dataset.incomplete = state.incomplete ? 'true' : 'false';
 
-    const renderMode = (nextMode) => {
-        mode = nextMode;
-        const responsiveImage = selectResponsiveImage(stage, mode);
-        image.src = responsiveImage.source;
-        image.alt = `${root.querySelector('.genplan-toolbar .eyebrow')?.textContent?.trim() || 'Генплан'}, вид ${mode.toUpperCase()}`;
-        stage.classList.toggle('has-mobile-background', responsiveImage.usesMobileBackground);
-        modeButtons.forEach((button) => button.setAttribute('aria-pressed', button.dataset.genplanMode === mode ? 'true' : 'false'));
-        geometryLayers.forEach((layer) => layer.toggleAttribute('hidden', layer.dataset.geometryMode !== mode));
-        emptyStates.forEach((state) => state.toggleAttribute('hidden', state.dataset.genplanGeometryEmpty !== mode || state.dataset.hasGeometry === 'true'));
+        tabs.forEach((tab) => {
+            const active = tab.dataset.genplanView === state.activeTab;
+            tab.setAttribute('aria-selected', active ? 'true' : 'false');
+            tab.tabIndex = active ? 0 : -1;
+        });
+        panels.forEach((panel) => panel.toggleAttribute('hidden', panel.dataset.genplanPanel !== state.activeTab));
+        modeControls.forEach((control) => control.setAttribute('aria-pressed', control.dataset.genplanMode === state.mode ? 'true' : 'false'));
+
+        if (stage && image) {
+            const nextImage = responsiveImage(stage, state.mode);
+            image.src = nextImage.source;
+            image.alt = `${root.querySelector('.genplan-toolbar .eyebrow')?.textContent?.trim() || 'Генплан'}, вид ${state.mode.toUpperCase()}`;
+            stage.classList.toggle('has-mobile-background', nextImage.mobile);
+        }
+
+        layers.forEach((layer) => layer.toggleAttribute('hidden', layer.dataset.geometryMode !== state.mode));
+        emptyStates.forEach((empty) => empty.toggleAttribute('hidden', empty.dataset.genplanGeometryEmpty !== state.mode || empty.dataset.hasGeometry === 'true'));
+
+        quarterTriggers.forEach((trigger) => {
+            const selected = trigger.dataset.quarterSlug === state.selectedQuarter;
+            const available = !trigger.dataset.quarterModes || trigger.dataset.quarterModes.split(',').includes(state.mode);
+            trigger.classList.toggle('is-selected', selected);
+            trigger.setAttribute('aria-pressed', selected ? 'true' : 'false');
+            if (trigger.dataset.quarterModes) trigger.setAttribute('aria-disabled', available ? 'false' : 'true');
+        });
+        pointTriggers.forEach((trigger) => {
+            const selected = trigger.dataset.pointSlug === state.selectedInfrastructure;
+            trigger.classList.toggle('is-selected', selected);
+            trigger.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        });
+        cards.forEach((card) => {
+            const visible = card.dataset.quarterCard === state.selectedQuarter || card.dataset.pointCard === state.selectedInfrastructure;
+            card.toggleAttribute('hidden', !visible);
+        });
+        selectionEmpty?.toggleAttribute('hidden', Boolean(state.selectedQuarter || state.selectedInfrastructure));
     };
 
-    modeButtons.forEach((button) => button.addEventListener('click', () => renderMode(button.dataset.genplanMode)));
-    window.addEventListener('resize', () => renderMode(mode), { passive: true });
-    renderMode(mode);
-};
-
-export const initializeQuarterSelection = (root) => {
-    const controls = [...root.querySelectorAll('[data-quarter-target]')];
-    const cards = [...root.querySelectorAll('[data-quarter-card]')];
-
-    const select = (target) => {
-        controls.forEach((control) => {
-            const selected = control.dataset.quarterTarget === target;
-            control.classList.toggle('is-selected', selected);
-            control.setAttribute('aria-pressed', selected ? 'true' : 'false');
-        });
-        cards.forEach((card) => { card.hidden = card.id !== target; });
+    const highlightQuarter = (slug, active) => {
+        quarterTriggers.filter((trigger) => trigger.dataset.quarterSlug === slug)
+            .forEach((trigger) => trigger.classList.toggle('is-hovered', active));
     };
 
-    controls.forEach((control) => {
-        control.addEventListener('click', () => select(control.dataset.quarterTarget));
-        control.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                select(control.dataset.quarterTarget);
-            }
-        });
-    });
+    return { render, hasQuarter, hasPoint, hasAnyGeometry, highlightQuarter, tabs };
 };

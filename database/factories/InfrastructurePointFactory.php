@@ -29,6 +29,7 @@ class InfrastructurePointFactory extends Factory
         return [
             'genplan_id' => Genplan::factory(),
             'name' => fake()->sentence(2),
+            'slug' => fake()->unique()->slug(2),
             'category' => InfrastructureCategory::Playground,
             'show_on_3d' => true,
             'show_on_2d' => true,

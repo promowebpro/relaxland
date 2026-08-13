@@ -207,3 +207,33 @@ Quarter, Plot и InfrastructurePoint являются едиными бизне�
 - будущий импорт pixel-based исходников должен явно делить `x` на source width и `y` на source height до записи;
 - смена coordinate contract потребует versioned data migration для всех Quarter/Plot/InfrastructurePoint records и синхронного обновления API/renderer;
 - произвольный SVG нельзя переносить в `polygon_data` без предварительного безопасного преобразования в список точек.
+
+## ADR-006 — Public Genplan URL State
+
+**Status:** Accepted, 2026-08-13.
+
+### Context
+
+Выбор режима, квартала или инфраструктуры должен открываться прямой ссылкой, корректно работать при SSR, восстанавливаться браузерными Back/Forward и не раскрывать внутренние database IDs. Одновременно Quarter и Infrastructure cards являются взаимоисключающими состояниями, а переход на Surroundings не должен сохранять скрытую selection.
+
+### Decision
+
+Публичный URL `/genplan` использует controlled query contract: `mode=2d|3d`, `quarter={quarter.slug}`, `point={infrastructure_point.slug}` и `view=surroundings`. Default state — `genplan + 3d` без selection. Quarter имеет приоритет, только если его slug опубликован и у него есть geometry текущего режима; иначе может быть выбран валидный point. Невалидные, массивные, inactive, hidden и mode-incompatible значения очищаются. При смене режима selection сохраняется только при наличии разрешённой geometry новой проекции.
+
+`InfrastructurePoint` получает стабильный per-Genplan public slug с unique constraint и migration backfill. Сервер разрешает initial state из уже eager-loaded public collections. Клиент использует тот же state shape, `pushState` для действий и `popstate` для Back/Forward; API roundtrip при hydration не выполняется.
+
+### Why
+
+- ссылка воспроизводит видимое состояние уже в первом SSR response;
+- публичные идентификаторы остаются стабильными при переносе данных;
+- взаимное исключение Quarter/Infrastructure определено один раз;
+- нет flash default-режима и нет лишнего network/N+1 запроса;
+- прогрессивные links сохраняют навигацию без JavaScript.
+
+### Consequences
+
+- изменение публичного slug после публикации может сломать сохранённые ссылки и требует redirect strategy;
+- URLs с `quarter` и `point` одновременно канонизируются в одно выбранное состояние;
+- Surroundings очищает selection и не загружает map provider;
+- Release 7 может расширить contract участком отдельным параметром только через новую совместимую decision/migration;
+- URL не является storage: loading/error остаются transient client state.

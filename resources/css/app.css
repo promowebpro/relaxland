@@ -2579,10 +2579,12 @@ picture.home-developer__media img,
     margin-bottom: 1.25rem;
 }
 
-.genplan-view-tabs button,
-.genplan-mode-switch button {
+.genplan-view-tabs a,
+.genplan-mode-switch a {
+    display: grid;
     min-width: 7.5rem;
     min-height: 2.75rem;
+    place-items: center;
     border: 0;
     border-radius: 999px;
     background: transparent;
@@ -2590,12 +2592,19 @@ picture.home-developer__media img,
     cursor: pointer;
     font: inherit;
     font-size: 0.75rem;
+    text-decoration: none;
 }
 
-.genplan-view-tabs button[aria-selected="true"],
-.genplan-mode-switch button[aria-pressed="true"] {
+.genplan-view-tabs a[aria-selected="true"],
+.genplan-mode-switch a[aria-pressed="true"] {
     background: var(--color-dark);
     color: white;
+}
+
+.genplan-view-tabs a:focus-visible,
+.genplan-mode-switch a:focus-visible {
+    outline: 3px solid var(--color-blue);
+    outline-offset: 2px;
 }
 
 .genplan-toolbar {
@@ -2653,6 +2662,7 @@ picture.home-developer__media img,
 
 .genplan-quarter:hover,
 .genplan-quarter:focus,
+.genplan-quarter.is-hovered,
 .genplan-quarter.is-selected {
     fill: rgba(225, 240, 166, 0.38);
     stroke: #fff;
@@ -2664,22 +2674,64 @@ picture.home-developer__media img,
     stroke-width: 7;
 }
 
-.genplan-quarter--limited { fill: rgba(242, 208, 127, 0.25); }
-.genplan-quarter--sold_out { fill: rgba(129, 135, 137, 0.34); }
-
-.genplan-marker circle {
+.genplan-quarter-label {
     fill: white;
-    stroke: rgba(38, 57, 64, 0.45);
-    stroke-width: 2;
+    font-size: 24px;
+    font-weight: 700;
+    paint-order: stroke;
+    pointer-events: none;
+    stroke: var(--color-dark);
+    stroke-width: 5px;
     vector-effect: non-scaling-stroke;
 }
 
-.genplan-marker text {
-    fill: var(--color-dark);
-    font-size: 24px;
+.genplan-quarter--limited { fill: rgba(242, 208, 127, 0.25); }
+.genplan-quarter--sold_out { fill: rgba(129, 135, 137, 0.34); }
+
+.genplan-marker-layer {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    pointer-events: none;
 }
 
-.genplan-marker[hidden] { display: none; }
+.genplan-marker-layer[hidden] { display: none; }
+
+.genplan-marker {
+    position: absolute;
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border: 2px solid rgba(38, 57, 64, 0.45);
+    border-radius: 50%;
+    background: white;
+    color: var(--color-dark);
+    left: var(--marker-x);
+    pointer-events: auto;
+    text-decoration: none;
+    top: var(--marker-y);
+    transform: translate(-50%, -50%);
+}
+
+.genplan-marker span {
+    font-size: 1.5rem;
+    line-height: 1;
+    transform: translateY(-0.14rem);
+}
+
+.genplan-marker:hover,
+.genplan-marker:focus-visible,
+.genplan-marker.is-selected {
+    border-color: var(--color-dark);
+    background: var(--color-dark);
+    color: white;
+    outline: none;
+}
+
+.genplan-marker:focus-visible {
+    box-shadow: 0 0 0 4px white, 0 0 0 7px var(--color-dark);
+}
 
 .genplan-overlay [data-geometry-mode][hidden] { display: none; }
 
@@ -2713,7 +2765,7 @@ picture.home-developer__media img,
     gap: 0.5rem;
 }
 
-.genplan-quarter-list button {
+.genplan-quarter-list a {
     display: flex;
     min-height: 3.2rem;
     align-items: center;
@@ -2726,10 +2778,11 @@ picture.home-developer__media img,
     cursor: pointer;
     font: inherit;
     font-size: 0.72rem;
+    text-decoration: none;
     text-align: left;
 }
 
-.genplan-quarter-list button span {
+.genplan-quarter-list__number {
     display: grid;
     width: 2rem;
     height: 2rem;
@@ -2739,22 +2792,80 @@ picture.home-developer__media img,
     background: var(--color-mist);
 }
 
-.genplan-quarter-list button.is-selected {
+.genplan-quarter-list a > span:last-child {
+    display: grid;
+    min-width: 0;
+    gap: 0.18rem;
+}
+
+.genplan-quarter-list a strong {
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.genplan-quarter-list a small {
+    color: var(--color-ink-soft);
+    font-size: 0.62rem;
+}
+
+.genplan-quarter-list a.is-selected {
     border-color: var(--color-dark);
     background: var(--color-dark);
     color: white;
 }
 
-.genplan-quarter-card {
+.genplan-quarter-list a.is-selected small { color: rgba(255, 255, 255, 0.72); }
+
+.genplan-quarter-list a.is-hovered:not(.is-selected) { border-color: var(--color-dark); }
+
+.genplan-quarter-list a[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.genplan-quarter-list a:focus-visible {
+    outline: 3px solid var(--color-blue);
+    outline-offset: 2px;
+}
+
+.genplan-selection {
+    position: relative;
+    min-height: 17rem;
+}
+
+.genplan-selection-empty {
+    display: grid;
+    min-height: 17rem;
+    align-content: center;
+    border: 1px dashed var(--color-line);
+    border-radius: var(--site-radius);
+    padding: 1.5rem;
+}
+
+.genplan-selection-empty[hidden] { display: none; }
+
+.genplan-selection-empty p {
+    margin: 0.75rem 0 0;
+    color: var(--color-ink-soft);
+    line-height: 1.55;
+}
+
+.genplan-quarter-card,
+.genplan-point-card {
+    position: relative;
     min-height: 17rem;
     border-radius: var(--site-radius);
     background: var(--color-blue);
     padding: 1.5rem;
 }
 
-.genplan-quarter-card[hidden] { display: none; }
+.genplan-quarter-card[hidden],
+.genplan-point-card[hidden] { display: none; }
 
-.genplan-quarter-card h2 {
+.genplan-quarter-card h2,
+.genplan-point-card h2 {
     margin: 1.25rem 0 0.75rem;
     font-family: var(--font-display);
     font-size: clamp(2rem, 4vw, 3.5rem);
@@ -2765,6 +2876,7 @@ picture.home-developer__media img,
 }
 
 .genplan-quarter-card p,
+.genplan-point-card p,
 .genplan-empty-copy {
     color: var(--color-ink-soft);
     line-height: 1.55;
@@ -2774,6 +2886,45 @@ picture.home-developer__media img,
     width: 100%;
     margin-top: 1rem;
     white-space: normal;
+}
+
+.genplan-card-close {
+    position: absolute;
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border: 1px solid rgba(48, 56, 61, 0.28);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.68);
+    color: var(--color-dark);
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.4rem;
+    line-height: 1;
+    right: 1rem;
+    top: 1rem;
+}
+
+.genplan-card-close:focus-visible {
+    outline: 3px solid var(--color-dark);
+    outline-offset: 2px;
+}
+
+.genplan-point-category {
+    display: block;
+    padding-right: 3rem;
+    color: var(--color-ink-soft);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+}
+
+.genplan-point-card > img {
+    width: 100%;
+    max-height: 11rem;
+    margin-top: 1rem;
+    border-radius: calc(var(--site-radius) * 0.65);
+    object-fit: cover;
 }
 
 .genplan-status {
@@ -2874,16 +3025,28 @@ picture.home-developer__media img,
     .genplan-hero__inner > * { min-width: 0; }
     .genplan-hero h1 { font-size: clamp(3.1rem, 15.5vw, 6rem); }
     .genplan-view-tabs { display: flex; width: 100%; }
-    .genplan-view-tabs button { flex: 1; min-width: 0; }
+    .genplan-view-tabs a { flex: 1; min-width: 0; }
     .genplan-toolbar { align-items: flex-start; flex-direction: column; }
     .genplan-mode-switch { align-self: stretch; }
-    .genplan-mode-switch button { flex: 1; }
+    .genplan-mode-switch a { flex: 1; }
     .genplan-stage { width: 100%; }
     .genplan-stage.has-mobile-background { aspect-ratio: 0.78; }
     .genplan-stage > img { object-fit: fill; }
     .genplan-sidebar { display: flex; }
     .genplan-quarter-list { display: flex; overflow-x: auto; padding-bottom: 0.25rem; scroll-snap-type: x proximity; }
-    .genplan-quarter-list button { min-width: 10rem; scroll-snap-align: start; }
+    .genplan-quarter-list a { min-width: 10rem; scroll-snap-align: start; }
+    .genplan-selection { min-height: 0; }
+    .genplan-quarter-card,
+    .genplan-point-card {
+        position: fixed;
+        z-index: 30;
+        max-height: min(72vh, 38rem);
+        border-radius: var(--site-radius) var(--site-radius) 0 0;
+        box-shadow: 0 -1rem 3rem rgba(38, 57, 64, 0.18);
+        inset: auto 0 0;
+        overflow-y: auto;
+        padding: 1.5rem max(1.5rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
+    }
     .surroundings-foundation__map { min-height: 24rem; }
     .surroundings-list { grid-template-columns: 1fr; }
 }

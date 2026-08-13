@@ -15,6 +15,7 @@ class InfrastructurePointResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'slug' => $this->slug,
             'category' => $this->category->value,
             'category_label' => $this->category->label(),
             'icon' => $this->icon,

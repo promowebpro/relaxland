@@ -133,4 +133,23 @@ Full hover/click choreography, animations, history/deep links, zoom/pan и по�
 - Сам contact sheet не используется как production background. До наполнения Genplan через Filament публичная страница закономерно показывает controlled empty state.
 - Отдельные утверждённые production 2D/3D/mobile background assets и реальные polygons/markers ещё должны быть переданы и внесены редактором.
 - Map provider для Surroundings не выбран; полноценная карта относится к Release 8.
-- Full Genplan interactions остаются **N/A / Release 6**, а public Plot UI — **N/A / Release 7**.
+- Public Plot UI остаётся **N/A / Release 7**; полноценная карта окружения — **N/A / Release 8**.
+
+# Release 6 — Genplan Interactions Visual QA
+
+Дата проверки: 2026-08-13.
+
+Перед реализацией повторён обязательный Release 5A preflight на fixture с намеренно разными polygon/label/marker coordinates в `3d` и `2d`. На 390 и 1280 px background, polygon, label и marker переключались совместно; был найден и закрыт пробел SSR-renderer: mode-specific Quarter label теперь выводится из `label_x/label_y`.
+
+| Release 6 / ширина | 360 | 390 | 768 | 1024 | 1280 | 1440 |
+| --- | --- | --- | --- | --- | --- | --- |
+| No horizontal overflow | PASS | PASS | PASS | PASS | PASS | PASS |
+| Quarter pointer + keyboard selection | PASS | PASS | PASS | PASS | PASS | PASS |
+| Infrastructure 44×44 target + card | PASS | PASS | PASS | PASS | PASS | PASS |
+| 2D/3D coordinated switch | PASS | PASS | PASS | PASS | PASS | PASS |
+| Selection card composition | Bottom sheet | Bottom sheet | Bottom sheet | Sidebar | Sidebar | Sidebar |
+| Text status / visible focus | PASS | PASS | PASS | PASS | PASS | PASS |
+
+Дополнительно проверены: 320 px; default без selection; SSR deep links для Quarter/Infrastructure; mutual exclusion; очистка mode-incompatible selection; list/polygon hover/focus synchronization; Enter/Space; Escape и возврат фокуса; close control; consultation Lead source/type; URL query; Back/Forward; Genplan/Surroundings tabs; отсутствие iframe/provider; desktop fallback при неподтверждённом mobile asset; controlled mobile variant; browser warning/error log.
+
+Plots не запрашиваются и в markup Release 6 не передаются. QA fixture после проверки удаляется; production content и изображения через эту проверку не подменяются.

@@ -135,7 +135,7 @@ if (leadModal) {
         nameInput.setAttribute('aria-required', nameInput.required ? 'true' : 'false');
         leadModal.classList.add('is-open');
         document.body.classList.add('has-open-modal');
-        window.history.replaceState(null, '', '#lead-form');
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#lead-form`);
         window.requestAnimationFrame(() => {
             window.requestAnimationFrame(() => dialog.focus({ preventScroll: true }));
         });

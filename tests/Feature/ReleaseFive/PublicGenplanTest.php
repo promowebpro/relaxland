@@ -49,8 +49,8 @@ class PublicGenplanTest extends TestCase
             ->assertSee('data-geometry-mode="2d"', false)
             ->assertSee('points="100,100 300,100 300,300 100,300"', false)
             ->assertSee('points="600,600 800,600 800,800 600,800"', false)
-            ->assertSee('transform="translate(200 300)"', false)
-            ->assertSee('transform="translate(800 700)"', false)
+            ->assertSee('style="--marker-x: 20%; --marker-y: 30%"', false)
+            ->assertSee('style="--marker-x: 80%; --marker-y: 70%"', false)
             ->assertSee('data-genplan-mode="3d"', false)
             ->assertSee('aria-pressed="true" data-genplan-mode="3d"', false);
     }

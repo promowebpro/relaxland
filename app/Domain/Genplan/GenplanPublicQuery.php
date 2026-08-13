@@ -153,7 +153,7 @@ class GenplanPublicQuery
     {
         return InfrastructurePoint::query()
             ->select([
-                'id', 'genplan_id', 'name', 'category', 'icon', 'image', 'description',
+                'id', 'genplan_id', 'name', 'slug', 'category', 'icon', 'image', 'description',
                 'show_on_3d', 'show_on_2d', 'sort_order', 'is_active',
             ])
             ->whereBelongsTo($genplan)

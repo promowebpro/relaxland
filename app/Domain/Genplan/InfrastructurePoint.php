@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class InfrastructurePoint extends Model
 {
@@ -15,7 +16,7 @@ class InfrastructurePoint extends Model
     use HasFactory;
 
     protected $fillable = [
-        'genplan_id', 'name', 'category', 'icon', 'image', 'description',
+        'genplan_id', 'name', 'slug', 'category', 'icon', 'image', 'description',
         'show_on_3d', 'show_on_2d', 'sort_order', 'is_active',
     ];
 
@@ -27,6 +28,30 @@ class InfrastructurePoint extends Model
             'show_on_2d' => 'boolean',
             'is_active' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $point): void {
+            if (filled($point->slug)) {
+                return;
+            }
+
+            $base = Str::slug($point->name) ?: 'point';
+            $candidate = $base;
+            $suffix = 2;
+
+            while (self::query()
+                ->where('genplan_id', $point->genplan_id)
+                ->where('slug', $candidate)
+                ->when($point->exists, fn ($query) => $query->whereKeyNot($point->getKey()))
+                ->exists()) {
+                $candidate = "{$base}-{$suffix}";
+                $suffix++;
+            }
+
+            $point->slug = $candidate;
+        });
     }
 
     public function genplan(): BelongsTo

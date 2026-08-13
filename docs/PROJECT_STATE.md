@@ -2,9 +2,9 @@
 
 ## Current Release
 
-Release 5A — Genplan Multi-view Geometry Correction: **IMPLEMENTED**.
+Release 6 — Genplan Interactions: **IMPLEMENTED**.
 
-Нормализованный geometry contract скорректирован: Quarter/Plot/InfrastructurePoint остаются едиными бизнес-сущностями, но имеют независимую presentation geometry для `2d` и `3d`. Filament, controlled JSON API, SSR `/genplan` и JS mode switch работают без cross-mode fallback. Full Genplan interactions (Release 6), public Plot UI (Release 7) и полноценная Surroundings map (Release 8) не начинались.
+SSR `/genplan` и progressive JavaScript реализуют доступный выбор кварталов и инфраструктуры, независимые 2D/3D layers, карточки, URL deep links и History API без загрузки участков. Public Plot UI (Release 7) и полноценная Surroundings map (Release 8) не начинались.
 
 ## Completed Releases
 
@@ -107,6 +107,21 @@ Release 5A — Genplan Multi-view Geometry Correction: **IMPLEMENTED**.
 - RBAC скорректирован: базовый `viewer` больше не получает `leads.view` и не видит PII заявок; `sales-manager` сохраняет Leads workflow.
 - Итоговая автоматическая проверка: 87 tests / 476 assertions.
 
+### Release 6 — Genplan Interactions
+
+- Дата: 2026-08-13.
+- Добавлен единый state contract: `activeTab`, `mode`, `selectedQuarter`, `selectedInfrastructure`, `loading`, `error`, `incomplete`; default — Genplan/3D без выбранного объекта.
+- SSR обрабатывает controlled query `view`, `mode`, `quarter`, `point`; Quarter и Infrastructure используют публичные slug, прямые ссылки не зависят от внутренних ID.
+- History API синхронизирует click/keyboard selection, mode, tabs и Back/Forward; invalid/hidden/missing-mode значения fail closed без cross-mode fallback.
+- SVG кварталы, эквивалентный текстовый selector и HTML-маркеры синхронизированы; marker target — 44×44 px, статусы передаются текстом, Enter/Space/Escape и возврат фокуса проверены.
+- Quarter и Infrastructure cards взаимно исключаются; Quarter CTA переиспользует существующую consultation Lead modal. Участки и plot endpoint из публичной страницы не загружаются.
+- Mobile selection card реализована как нижний non-modal sheet; desktop остаётся двухколоночным. Surroundings сохраняет provider-neutral foundation без внешней карты.
+- Progressive enhancement сохраняет рабочие SSR links без JS; hydration использует уже выданный dataset, не повторяет API-запрос и очищает selection при отсутствии geometry нового режима.
+- Доступность включает tab semantics, semantic controls, accessible names, текстовые статусы, visible focus, reduced-motion и отсутствие focus trap в немодальных cards.
+- `infrastructure_points` получил стабильный per-Genplan public slug с migration/backfill, Filament field и controlled API field.
+- Browser QA пройден на 360/390/768/1024/1280/1440 px (дополнительно 320 px); preflight 5A отдельно подтвердил намеренно разные 2D/3D координаты на 390/1280 px.
+- Release 6 regression: 8 tests / 49 assertions; полный suite: 95 tests / 525 assertions.
+
 ## Current Architecture
 
 - Laravel/Blade приложение находится в корне репозитория; документация — в `docs/`.
@@ -145,7 +160,7 @@ Filament Shield не установлен и не требуется текущ�
 - `genplans` — name/slug, 2D/3D/mobile Storage paths, source dimensions, explicit mobile compatibility flags, active state и reserved settings JSON.
 - `quarters` — Genplan FK, per-Genplan unique slug, enum status, order и active state; presentation geometry вынесена отдельно.
 - `plots` — Quarter FK, per-Quarter unique slug/number, decimal area/money, enum status, attributes и public visibility; presentation geometry вынесена отдельно.
-- `infrastructure_points` — Genplan FK, controlled category, per-mode visibility, order и active state; presentation geometry вынесена отдельно.
+- `infrastructure_points` — Genplan FK, per-Genplan public slug, controlled category, per-mode visibility, order и active state; presentation geometry вынесена отдельно.
 - `quarter_geometries` — Quarter FK, typed mode, normalized polygon/label и unique `quarter_id + mode`.
 - `plot_geometries` — Plot FK, typed mode, optional normalized polygon/marker и unique `plot_id + mode`.
 - `infrastructure_point_geometries` — InfrastructurePoint FK, typed mode, normalized marker и unique `infrastructure_point_id + mode`.
@@ -188,7 +203,7 @@ Release 1 не добавлял новые permissions. Используются
 - Leads — READY.
 - Genplan Foundation — READY.
 - Multi-view Geometry — READY.
-- Genplan Interactions — NOT STARTED (Release 6).
+- Genplan Interactions — READY.
 - Plot domain/admin/API foundation — READY; public Plot UI — NOT STARTED (Release 7).
 - Surroundings domain/admin/API foundation — READY; full map — NOT STARTED (Release 8).
 - Full SEO module — NOT STARTED.
@@ -204,7 +219,7 @@ Release 1 не добавлял новые permissions. Используются
 - `leads.store`: `POST /leads` — единый endpoint публичных заявок; отдельной публичной страницы/GET API Leads нет.
 - `blog.index`: `GET /blog`.
 - `blog.show`: `GET /blog/{slug}`.
-- `genplan.index`: `GET /genplan` — SSR Foundation/empty state.
+- `genplan.index`: `GET /genplan` — SSR interactions/empty state; controlled query: `view=surroundings`, `mode=2d|3d`, `quarter={public-slug}`, `point={public-slug}`.
 - `api.genplan.*`: read-only `GET /api/genplan`, Quarter, Quarter plots и Infrastructure принимают controlled `mode=2d|3d` (default `3d`, invalid mode → 422); Surroundings geometry mode не использует.
 - Неизвестные URL используют `resources/views/errors/404.blade.php` и сохраняют HTTP 404.
 
@@ -232,7 +247,7 @@ Release 1 не добавлял новые permissions. Используются
 - `blog-card`, `pagination`, `article-image` для публичного Blog.
 - `responsive-image` и фиксированная `pages/home.blade.php` для главной.
 - `pages/about.blade.php` как фиксированная композиция на существующих Home/Settings data.
-- `pages/genplan/index.blade.php` как SSR shell; `resources/js/genplan/foundation.js` и `core/stage.js` добавляют только modes/tabs/minimal Quarter selection.
+- `pages/genplan/index.blade.php` как SSR interaction shell; `resources/js/genplan/foundation.js`, `core/state.js`, `core/url-state.js` и `core/stage.js` реализуют controlled state, History API и доступную синхронизацию.
 - Settings передаются в header/footer/pages из одного typed/cached механизма.
 - Mobile menu поддерживает keyboard Escape, focus trap, `aria-expanded`, блокировку фонового scroll и возврат фокуса.
 - Видимый focus, semantic landmarks и reduced-motion предусмотрены в общем CSS.
@@ -279,7 +294,7 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Known Technical Debt
 
-- MySQL 8+ недоступен в текущем окружении (`127.0.0.1:3306`), поэтому миграции Release 0–5A проверены только на SQLite. Корректирующая migration использует portable Laravel schema/query API, JSON, DECIMAL и FK, но перед production обязателен полный migration/rollback check на MySQL 8+.
+- MySQL 8+ недоступен в текущем окружении (`127.0.0.1:3306`), поэтому миграции Release 0–6 проверены только на SQLite. Миграции используют portable Laravel Schema/Query API, JSON, DECIMAL, FK и composite unique, но перед production обязателен полный migration/rollback check на MySQL 8+.
 - Production mail transport/получатель не настроены; уведомления о новых Leads намеренно отложены вместо фиктивного mail flow. Заявка сохраняется и сразу доступна в Filament.
 - Постоянный картографический provider не выбран; Contacts использует безопасный presentation fallback без API key.
 - Контакты, координаты, route links и юридические документы должны быть заполнены фактическими данными через Filament.
@@ -287,6 +302,7 @@ Release 1 не добавлял новые permissions. Используются
 - Полноценный production image pipeline с автоматическими AVIF/srcset-производными не внедряется в Release 3A; утверждённые PDF-фотографии готовятся в контролируемых WebP-размерах.
 - Exact design display-font и standalone mascot 404 остаются ожидаемыми исходниками; текущее поведение описано в `docs/VISUAL_QA.md`.
 - Production 2D/3D/mobile Genplan backgrounds и реальные normalized polygons/markers должны быть переданы и заполнены через Filament; contact sheet не подменяет business data.
+- Публичные Infrastructure slug рассчитаны как долгоживущие ссылки; их ручное изменение после публикации потребует redirect strategy.
 - Защищённый Git baseline Release 0–2 создан; `.env`, dependencies, production build и сгенерированные Filament assets исключены из истории.
 
 ## Tests
@@ -302,12 +318,13 @@ Release 1 не добавлял новые permissions. Используются
 - Release 5 public/API: SSR/empty state, active Genplan, inactive Quarter, hidden Plot, mode-specific Infrastructure, inactive Surroundings, controlled DTO fields и read-only routes.
 - Release 5 admin: unauthenticated/role access, view/manage separation, all five CRUD routes, invalid Repeater geometry и protected parent deletion.
 - Release 5A: mode uniqueness/enum, независимые 2D/3D coordinates, отсутствие fallback, API default/validation, SSR layer clearing, dual-mode Filament save, mobile compatibility guard, forward/rollback legacy migration и отсутствие Leads у viewer.
+- Release 6: SSR/query state, public slugs, invalid/hidden/missing-mode selection, mutual exclusion, no Plot/N+1 boundary, safe cards/API и browser keyboard/History interactions.
 - Полный Release 0 regression suite сохранён и проходит.
 
 ## Pending Work
 
-- Следующий этап по SPEC — Release 6 Genplan Interactions, только после отдельного задания.
-- Затем остаются Release 7 public Plots, Release 8 Surroundings map и Release 9 production QA/SEO.
+- Следующий этап по SPEC — Release 7 Public Plots, только после отдельного задания.
+- Затем остаются Release 8 Surroundings map и Release 9 production QA/SEO.
 - До production: MySQL 8+ migration check, реальные settings/legal/blog/Genplan data, 2D/3D/mobile plan assets, exact display-font и standalone 404 mascot при их передаче.
 
 ## Last Verification
@@ -316,12 +333,13 @@ Release 1 не добавлял новые permissions. Используются
 - `composer audit --locked` — PASS, advisories отсутствуют.
 - После временных timeout/502 Packagist повторный строгий `composer audit --locked` завершился успешно; advisories отсутствуют.
 - `npm audit --audit-level=moderate` — PASS, 0 vulnerabilities.
-- `php artisan test` — PASS, 87 tests / 476 assertions после Release 5A.
+- `php artisan test` — PASS, 95 tests / 525 assertions после Release 6.
 - `php artisan migrate:fresh --seed` — PASS на SQLite.
 - rollback двух Home/Story migrations, повторное применение и финальный fresh/seed — PASS на SQLite.
 - Release 4 `migrate:fresh --seed`, rollback Leads migration и повторный migrate — PASS на SQLite; `assigned_to`/`privacy_document_id` используют `SET NULL`, обязательные индексы присутствуют.
 - Release 5 `migrate:fresh --seed`, rollback `2026_08_13_150000_create_genplan_foundation_tables` и повторный migrate — PASS на отдельной SQLite verification DB; production/local data не очищались.
 - Release 5A forward migration legacy→`3d`, отсутствие автоматического `2d`, rollback `3d`→legacy и повторный migrate — PASS в integration test и на отдельной SQLite verification DB.
+- Release 6 public slug migration: forward/backfill/`NOT NULL`/per-Genplan unique, rollback и повторный migrate — PASS на SQLite; `migrate:fresh --seed` также PASS на `:memory:` verification DB.
 - `vendor/bin/pint` и `vendor/bin/pint --test` — PASS.
 - `npm run build` — PASS, Vite 7.3.6.
 - `php artisan view:cache` — PASS.
@@ -334,6 +352,8 @@ Release 1 не добавлял новые permissions. Используются
 - Browser QA Release 4: reusable modal, context, validation, consent, keyboard/focus, success redirect, public CTAs и Filament Leads проверены на 360/390/768/1024/1280/1440; zero horizontal overflow и console errors.
 - Browser QA Release 5 `/genplan`: 360/390/768/1024/1280/1440, zero image/SVG alignment delta, zero document overflow/broken images, minimum touch target 44px и empty state после удаления QA fixture.
 - Browser interactions Release 5: 2D/3D background + marker visibility, pointer/keyboard Quarter selection, Genplan/Surroundings tabs, mobile menu Escape/focus — PASS; console warning/error log пуст.
+- Browser QA Release 6: 360/390/768/1024/1280/1440 (дополнительно 320), default/2D/3D, Quarter/Infrastructure cards, close, mode-compatible persistence, missing geometry clear, tabs, Lead modal, direct links и Back/Forward — PASS; overflow и console warnings/errors отсутствуют.
+- Release 5A preflight перед Release 6: distinct polygon/label/marker coordinates на 390/1280, coordinated background/layer switch и отсутствие fallback — PASS; найденный пробел Quarter label renderer исправлен.
 - Filament browser QA: группа «Посёлок», пять CRUD listing/create routes и structured Quarter `x/y` Repeater — PASS.
 - В публичных Vite assets нет ссылок на Filament — PASS.
 - `.env`, `public/build`, `public/storage` игнорируются git — PASS.
@@ -341,4 +361,4 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Last Updated
 
-2026-08-13 — Release 5A исправил архитектурную ошибку общей 2D/3D geometry: добавлены view-specific typed tables, безопасная legacy migration/rollback, отдельные Filament sections, mode-aware API/SSR/JS без fallback, mobile framing guard и запрет Leads PII для viewer; Release 6 не начинался.
+2026-08-13 — Release 6 завершён: SSR/public-slug deep links, History API, доступные Quarter/Infrastructure interactions и cards, mode-safe selection, mobile bottom sheet, no-Plot performance boundary, ADR-006 и полная browser/test verification; Release 7 не начинался.

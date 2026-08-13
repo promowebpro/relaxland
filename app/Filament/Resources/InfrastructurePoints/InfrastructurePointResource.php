@@ -50,6 +50,7 @@ class InfrastructurePointResource extends Resource
         return $schema->components([Section::make('Объект')->columns(2)->schema([
             Select::make('genplan_id')->label('Генплан')->relationship('genplan', 'name')->required()->searchable()->preload(),
             TextInput::make('name')->label('Название')->required()->maxLength(255),
+            TextInput::make('slug')->label('Публичный slug')->alphaDash()->maxLength(255)->helperText('Если оставить пустым, будет создан из названия.')->unique(modifyRuleUsing: fn ($rule, $get) => $rule->where('genplan_id', $get('genplan_id')), ignoreRecord: true),
             Select::make('category')->label('Категория')->options(self::enumOptions())->required(), TextInput::make('icon')->label('Ключ иконки')->alphaDash()->maxLength(100),
             FileUpload::make('image')->label('Изображение')->disk('public')->directory('genplan/infrastructure')->image()->maxSize(15360),
             Textarea::make('description')->label('Описание')->rows(4)->maxLength(3000),
@@ -61,7 +62,7 @@ class InfrastructurePointResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->defaultSort('sort_order')->columns([
-            TextColumn::make('name')->label('Название')->searchable(), TextColumn::make('genplan.name')->label('Генплан'),
+            TextColumn::make('name')->label('Название')->searchable(), TextColumn::make('slug')->label('Slug')->searchable()->toggleable(), TextColumn::make('genplan.name')->label('Генплан'),
             TextColumn::make('category')->label('Категория')->formatStateUsing(fn (InfrastructureCategory $state) => $state->label()),
             IconColumn::make('show_on_3d')->label('3D')->boolean(), IconColumn::make('show_on_2d')->label('2D')->boolean(), IconColumn::make('is_active')->label('Активен')->boolean(),
         ])->filters([SelectFilter::make('category')->label('Категория')->options(self::enumOptions())])->recordActions([EditAction::make(), DeleteAction::make()])->toolbarActions([]);
