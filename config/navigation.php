@@ -3,7 +3,7 @@
 return [
     'header' => [
         ['label' => 'О нас', 'route' => 'about'],
-        ['label' => 'Генплан', 'route' => null],
+        ['label' => 'Генплан', 'route' => 'genplan.index'],
         ['label' => 'Выбрать участок', 'route' => null],
         ['label' => 'Контакты', 'route' => 'contacts'],
     ],
@@ -11,7 +11,7 @@ return [
     'footer' => [
         'Главная' => [
             ['label' => 'Территория', 'route' => null],
-            ['label' => 'Ген план', 'route' => null],
+            ['label' => 'Ген план', 'route' => 'genplan.index'],
             ['label' => 'Выбрать участок', 'route' => null],
             ['label' => 'Варианты приобретения', 'route' => null],
         ],

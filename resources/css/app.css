@@ -2526,6 +2526,348 @@ picture.home-developer__media img,
     }
 }
 
+/* Genplan foundation */
+.genplan-page .site-header {
+    position: relative;
+}
+
+.genplan-hero {
+    border-bottom: 1px solid var(--color-line);
+    padding: clamp(3rem, 8vw, 7rem) 0 clamp(2rem, 5vw, 4rem);
+}
+
+.genplan-hero__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 30rem);
+    align-items: end;
+    gap: 2rem;
+}
+
+.genplan-hero h1,
+.genplan-empty-state h2,
+.surroundings-foundation h2 {
+    margin: 0.5rem 0 0;
+    font-family: var(--font-display);
+    font-size: clamp(3.5rem, 10vw, 8.5rem);
+    font-weight: 400;
+    line-height: 0.88;
+    text-transform: uppercase;
+}
+
+.genplan-hero__inner > p,
+.genplan-toolbar p,
+.surroundings-foundation > div:first-child > p {
+    color: var(--color-ink-soft);
+    line-height: 1.6;
+}
+
+.genplan-shell {
+    padding-block: 1rem clamp(4rem, 8vw, 8rem);
+}
+
+.genplan-view-tabs,
+.genplan-mode-switch {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    background: var(--color-paper-light);
+}
+
+.genplan-view-tabs {
+    margin-bottom: 1.25rem;
+}
+
+.genplan-view-tabs button,
+.genplan-mode-switch button {
+    min-width: 7.5rem;
+    min-height: 2.75rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-ink-soft);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.75rem;
+}
+
+.genplan-view-tabs button[aria-selected="true"],
+.genplan-mode-switch button[aria-pressed="true"] {
+    background: var(--color-dark);
+    color: white;
+}
+
+.genplan-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.genplan-toolbar p {
+    margin: 0.35rem 0 0;
+    font-size: 0.82rem;
+}
+
+.genplan-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 22rem);
+    gap: 1rem;
+}
+
+.genplan-stage {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: var(--genplan-aspect);
+    border-radius: var(--site-radius);
+    background: #d8ddd7;
+    isolation: isolate;
+}
+
+.genplan-stage > img,
+.genplan-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    inset: 0;
+}
+
+.genplan-stage > img {
+    object-fit: fill;
+}
+
+.genplan-overlay {
+    z-index: 1;
+}
+
+.genplan-quarter {
+    fill: rgba(236, 244, 203, 0.1);
+    stroke: rgba(255, 255, 255, 0.88);
+    stroke-width: 4;
+    vector-effect: non-scaling-stroke;
+    cursor: pointer;
+    transition: fill 160ms ease, stroke 160ms ease;
+}
+
+.genplan-quarter:hover,
+.genplan-quarter:focus,
+.genplan-quarter.is-selected {
+    fill: rgba(225, 240, 166, 0.38);
+    stroke: #fff;
+    outline: none;
+}
+
+.genplan-quarter:focus {
+    stroke: #263940;
+    stroke-width: 7;
+}
+
+.genplan-quarter--limited { fill: rgba(242, 208, 127, 0.25); }
+.genplan-quarter--sold_out { fill: rgba(129, 135, 137, 0.34); }
+
+.genplan-marker circle {
+    fill: white;
+    stroke: rgba(38, 57, 64, 0.45);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+}
+
+.genplan-marker text {
+    fill: var(--color-dark);
+    font-size: 24px;
+}
+
+.genplan-marker[hidden] { display: none; }
+
+.genplan-sidebar {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.genplan-quarter-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.genplan-quarter-list button {
+    display: flex;
+    min-height: 3.2rem;
+    align-items: center;
+    gap: 0.65rem;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    background: white;
+    padding: 0.4rem 0.75rem;
+    color: var(--color-ink);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.72rem;
+    text-align: left;
+}
+
+.genplan-quarter-list button span {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--color-mist);
+}
+
+.genplan-quarter-list button.is-selected {
+    border-color: var(--color-dark);
+    background: var(--color-dark);
+    color: white;
+}
+
+.genplan-quarter-card {
+    min-height: 17rem;
+    border-radius: var(--site-radius);
+    background: var(--color-blue);
+    padding: 1.5rem;
+}
+
+.genplan-quarter-card[hidden] { display: none; }
+
+.genplan-quarter-card h2 {
+    margin: 1.25rem 0 0.75rem;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 400;
+    line-height: 0.95;
+    text-transform: uppercase;
+}
+
+.genplan-quarter-card p,
+.genplan-empty-copy {
+    color: var(--color-ink-soft);
+    line-height: 1.55;
+}
+
+.genplan-quarter-card .button {
+    width: 100%;
+    margin-top: 1rem;
+    white-space: normal;
+}
+
+.genplan-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+}
+
+.genplan-status::before {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: #7aa571;
+    content: '';
+}
+
+.genplan-status--limited::before { background: #ce9434; }
+.genplan-status--sold_out::before { background: #7b8083; }
+
+.genplan-empty-state {
+    display: grid;
+    min-height: min(42rem, 70vh);
+    place-items: center;
+    border-radius: var(--site-radius);
+    background: var(--color-blue);
+    padding: clamp(2rem, 8vw, 7rem);
+    text-align: center;
+}
+
+.genplan-empty-state h2 {
+    max-width: 12ch;
+    font-size: clamp(2.75rem, 8vw, 6rem);
+}
+
+.genplan-empty-state p { max-width: 35rem; }
+
+.surroundings-foundation {
+    display: grid;
+    grid-template-columns: minmax(16rem, 0.75fr) minmax(0, 1.5fr);
+    gap: 1rem;
+}
+
+.surroundings-foundation h2 {
+    max-width: 10ch;
+    font-size: clamp(2.75rem, 7vw, 6rem);
+}
+
+.surroundings-foundation__map {
+    display: grid;
+    min-height: 34rem;
+    place-items: center;
+    border-radius: var(--site-radius);
+    background:
+        linear-gradient(90deg, transparent 49%, rgba(48, 56, 61, 0.06) 50%, transparent 51%),
+        linear-gradient(transparent 49%, rgba(48, 56, 61, 0.06) 50%, transparent 51%),
+        var(--color-mist);
+    background-size: 4rem 4rem;
+    color: var(--color-ink-soft);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.surroundings-list {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.surroundings-list li {
+    min-width: 0;
+    border-top: 1px solid var(--color-line);
+    padding-top: 0.75rem;
+}
+
+.surroundings-list span {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: var(--color-ink-soft);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+}
+
+@media (max-width: 63.99rem) {
+    .genplan-layout { grid-template-columns: 1fr; }
+    .genplan-sidebar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.75fr); }
+}
+
+@media (max-width: 47.99rem) {
+    .genplan-hero__inner,
+    .surroundings-foundation { grid-template-columns: 1fr; }
+
+    .genplan-hero__inner > * { min-width: 0; }
+    .genplan-hero h1 { font-size: clamp(3.1rem, 15.5vw, 6rem); }
+    .genplan-view-tabs { display: flex; width: 100%; }
+    .genplan-view-tabs button { flex: 1; min-width: 0; }
+    .genplan-toolbar { align-items: flex-start; flex-direction: column; }
+    .genplan-mode-switch { align-self: stretch; }
+    .genplan-mode-switch button { flex: 1; }
+    .genplan-stage { width: 100%; }
+    .genplan-stage.has-mobile-background { aspect-ratio: 0.78; }
+    .genplan-stage > img { object-fit: fill; }
+    .genplan-sidebar { display: flex; }
+    .genplan-quarter-list { display: flex; overflow-x: auto; padding-bottom: 0.25rem; scroll-snap-type: x proximity; }
+    .genplan-quarter-list button { min-width: 10rem; scroll-snap-align: start; }
+    .surroundings-foundation__map { min-height: 24rem; }
+    .surroundings-list { grid-template-columns: 1fr; }
+}
+
 /* Release 3A — approved visual language from docs/design. */
 :root {
     --color-ink: #30383d;

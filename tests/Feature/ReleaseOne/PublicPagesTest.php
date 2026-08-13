@@ -43,9 +43,9 @@ class PublicPagesTest extends TestCase
             ->assertSee('Забота о клиенте');
     }
 
-    public function test_release_three_a_does_not_expose_future_product_routes(): void
+    public function test_release_five_does_not_expose_future_product_routes(): void
     {
-        foreach (['/genplan', '/plots', '/surroundings'] as $path) {
+        foreach (['/plots', '/surroundings'] as $path) {
             $this->get($path)->assertNotFound();
         }
     }

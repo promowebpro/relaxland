@@ -1,4 +1,5 @@
 import './bootstrap';
+import './genplan/foundation';
 
 const menuToggle = document.querySelector('[data-menu-toggle]');
 const mobileMenu = document.querySelector('[data-mobile-menu]');

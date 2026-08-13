@@ -38,7 +38,8 @@ class PublicHomeTest extends TestCase
             ->assertSee('Можайский округ, тестовый адрес')
             ->assertSee('role="tablist"', false)
             ->assertSee('data-season-tab', false)
-            ->assertSee('Интерактивный генплан — скоро')
+            ->assertSee('Открыть генплан')
+            ->assertSee(route('genplan.index'), false)
             ->assertDontSee('/css/filament', false)
             ->assertDontSee('/js/filament', false);
     }

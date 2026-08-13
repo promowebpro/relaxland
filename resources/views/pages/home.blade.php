@@ -195,7 +195,7 @@
             </div>
             <div class="home-genplan__frame">
                 <x-responsive-image :path="$home->genplan_image" :alt="$home->genplan_image_alt ?: ''" fallback="assets/design/home-genplan.webp" />
-                <x-button :disabled="true" variant="outline">Интерактивный генплан — скоро</x-button>
+                <x-button :href="route('genplan.index')" variant="outline">Открыть генплан</x-button>
             </div>
         </div>
     </section>

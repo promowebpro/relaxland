@@ -2,6 +2,13 @@
 
 namespace App\Providers;
 
+use App\Domain\Genplan\Genplan;
+use App\Domain\Genplan\GenplanContentPolicy;
+use App\Domain\Genplan\InfrastructurePoint;
+use App\Domain\Genplan\Plot;
+use App\Domain\Genplan\PlotPolicy;
+use App\Domain\Genplan\Quarter;
+use App\Domain\Genplan\SurroundingPlace;
 use App\Domain\Leads\Lead;
 use App\Domain\Leads\LeadConsentDocument;
 use App\Domain\Leads\LeadPolicy;
@@ -34,6 +41,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Genplan::class, GenplanContentPolicy::class);
+        Gate::policy(Quarter::class, GenplanContentPolicy::class);
+        Gate::policy(InfrastructurePoint::class, GenplanContentPolicy::class);
+        Gate::policy(SurroundingPlace::class, GenplanContentPolicy::class);
+        Gate::policy(Plot::class, PlotPolicy::class);
         Gate::policy(Lead::class, LeadPolicy::class);
 
         RateLimiter::for('lead-submissions', fn (Request $request): Limit => Limit::perMinute(5)->by($request->ip()));

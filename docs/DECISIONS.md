@@ -132,3 +132,69 @@ About реализуется фиксированным Blade route `/about`: с
 - каждое UTM-поле фиксируется при первом собственном непустом значении;
 - изменение набора атрибуции или правил выбора документа требует совместимого изменения middleware, Lead action и тестов;
 - полноценный юридический аудит, CRM-синхронизация и внешняя аналитика остаются вне Release 4.
+
+## ADR-005 — Genplan Coordinate and Geometry Contract
+
+**Status:** Accepted, 2026-08-13.
+
+### Context
+
+Один Genplan должен использовать общую геометрию поверх 2D, 3D и optional mobile background assets. Координаты обязаны переживать responsive resize, не зависеть от CSS pixels и оставаться пригодными для будущего visual editor, API и SVG interactions. Хранение готового SVG из административного ввода расширило бы поверхность XSS и сделало формат разметки частью данных.
+
+### Decision
+
+Основной контракт всех точек Genplan — нормализованные координаты в диапазоне `0..1`. `x = 0` / `y = 0` обозначают левую / верхнюю границу coordinate canvas, `x = 1` / `y = 1` — правую / нижнюю. Quarter, Plot marker и InfrastructurePoint используют один контракт независимо от 2D/3D режима.
+
+Публичный renderer переводит нормализованные значения в внутренний безопасный SVG `viewBox="0 0 1000 1000"`. Background image и overlay занимают один и тот же stage rectangle; поэтому масштабирование выполняется браузером одинаково и не требует CSS-pixel offsets. Optional mobile asset обязан сохранять ту же нормализованную framing-систему. Если mobile asset отсутствует, renderer сохраняет aspect ratio основного изображения, а не растягивает его до мобильной композиции.
+
+### Coordinate system
+
+- `x`, `y`: конечные numeric values, включительно от `0` до `1`;
+- постоянная точность хранения: до 6 знаков после запятой (`DECIMAL(7,6)` для marker/label columns);
+- latitude/longitude SurroundingPlace не относятся к Genplan canvas и хранятся отдельно как географические decimal coordinates;
+- CSS pixels и display размеры никогда не записываются как доменная геометрия.
+
+### Polygon format
+
+`polygon_data` — упорядоченный JSON list минимум из трёх точек:
+
+```json
+[
+  {"x": 0.1234, "y": 0.4567},
+  {"x": 0.2234, "y": 0.5567},
+  {"x": 0.3234, "y": 0.4567}
+]
+```
+
+Каждая точка содержит ровно ключи `x` и `y`; неизвестные и отсутствующие ключи запрещены. На записи модель повторно нормализует структуру независимо от Filament validation. Self-intersection и топологические операции сознательно не входят в foundation.
+
+### Why
+
+- одна геометрия синхронна для 2D, 3D и responsive layout;
+- данные детерминированно сериализуются в API и SVG points;
+- future editor может менять UI без миграции DB-контракта;
+- server-side validation предотвращает malformed geometry даже вне Filament;
+- приложение генерирует разрешённые SVG elements само и не исполняет markup из БД.
+
+### Alternatives considered
+
+- CSS/display pixels: ломаются при resize и при замене исходного изображения.
+- Координаты исходного растра: требуют постоянной привязки к конкретным dimensions и усложняют mobile variants.
+- Готовый SVG/path markup в БД: unsafe, плохо валидируется и связывает данные с renderer implementation.
+- Отдельная геометрия для 2D и 3D: создаёт рассинхронизацию одного бизнес-объекта.
+- Canvas/WebGL: лишает Foundation доступного DOM и не нужен для текущего объёма.
+
+### Consequences
+
+- все background variants должны иметь согласованный coordinate framing; несовместимый crop требует подготовки нового asset, а не ручной поправки polygons;
+- graphic polygon editor позже обязан читать и сохранять тот же normalized list;
+- SVG scale `1000` является внутренней деталью renderer, а не новым DB-контрактом;
+- сложная geometry validation может быть добавлена отдельно без изменения формата;
+- mobile vertical composition используется только при наличии специально подготовленного mobile asset.
+
+### Migration implications
+
+- текущая первая миграция создаёт normalized decimal marker/label columns и JSON polygon columns; legacy pixel geometry отсутствует;
+- будущий импорт pixel-based исходников должен явно делить `x` на source width и `y` на source height до записи;
+- смена coordinate contract потребует versioned data migration для всех Quarter/Plot/InfrastructurePoint records и синхронного обновления API/renderer;
+- произвольный SVG нельзя переносить в `polygon_data` без предварительного безопасного преобразования в список точек.
