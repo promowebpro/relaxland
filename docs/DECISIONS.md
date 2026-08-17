@@ -247,3 +247,54 @@ Controlled Plot query дополнительно поддерживает `statu
 Начальная страница без Quarter не выполняет Plot query и не сериализует Plot collection. Quarter deep link progressive-rendered: сервер загружает только его Plots и только geometry выбранного режима. После hydration клиент кэширует полный controlled payload по ключу `quarter|mode`, фильтрует/sort локально, отменяет предыдущий fetch через `AbortController` и применяет response только при совпадении request version и текущего ключа.
 
 Plot без geometry текущего режима остаётся доступным в списке и direct-link карточке, но не получает polygon/marker из другого режима. Этот controlled text-only state предпочтительнее ложной подсветки. `available` разрешает inquiry CTA; `reserved` и `sold` публично информативны, но CTA не получают. Lead принимает только slugs, повторно разрешает их server-side и записывает безопасный текстовый context без доверия к browser-supplied price/status.
+
+### Release 8 extension — Surrounding Place selection
+
+URL окружения использует `view=surroundings` и optional `place={surrounding_place.slug}`. Slug стабилен и уникален в пределах Genplan; внутренний ID не публикуется. Place разрешается только через текущий active Genplan и public scope с active state, controlled category и валидной geographic point. `place` взаимоисключается с `quarter`, `plot` и `point`; переход в Genplan и смена tab очищают Surroundings selection.
+
+SSR и клиент используют одинаковый resolved state. Progressive links работают без JavaScript, History API восстанавливает selection, close/Escape удаляет только `place`, а невалидные и inactive slugs fail closed. Клиент строит новый URL из controlled contract, поэтому неизвестные query-параметры не переносятся в историю и не становятся скрытым хранилищем PII. Category filters, loading/error, provider status и map viewport остаются transient и в URL не записываются.
+
+## ADR-007 — Surroundings map provider boundary
+
+**Status:** Accepted, 2026-08-17; production-key verification pending.
+
+### Context
+
+Утверждённый Genplan contact sheet прямо обозначает обзорную часть как Яндекс-карту. Публичная страница при этом обязана оставаться содержательной без ключа, при блокировке внешнего SDK и при отключённом JavaScript. Geographic coordinates не относятся к normalized 2D/3D canvas ADR-005, а provider-specific objects не должны попадать в доменную модель.
+
+### Decision
+
+- выбран Yandex Maps JavaScript API v3, подключаемый только при первом открытии `view=surroundings`;
+- browser API key задаётся через `YANDEX_MAPS_API_KEY`, не коммитится и должен быть ограничен HTTP Referer разрешённых доменов; ключ неизбежно виден браузеру и не считается server-side secret;
+- один loader promise и один SDK script обслуживают страницу; failed script удаляется, retry создаёт новую попытку, а поздний результат игнорируется по generation token;
+- `SurroundingPlace` остаётся provider-neutral: Genplan relation, stable slug, controlled category, decimal latitude/longitude, text/image/HTTPS route link, order и active state; vendor object ID/JSON/markup не хранятся;
+- единственный владелец координат посёлка — существующие public Settings `contacts.village_latitude` и `contacts.village_longitude`; параллельные координаты в Genplan не создаются;
+- provider adapter получает только controlled DTO, сам создаёт DOM markers через `textContent` и поддерживает create/update/select/fit/zoom/destroy;
+- SSR всегда отдаёт заголовок, filters, адрес/координаты посёлка, список мест, расстояние по прямой, карточки и безопасные route links; карта является progressive enhancement;
+- состояния missing key, disabled, empty data, timeout и unavailable показывают честный fallback с доступным списком; provider retry не перезагружает страницу;
+- mobile карта не перехватывает однопальцевый page scroll: оставлен pinch zoom, selection card является non-modal bottom sheet; desktop разрешает drag/double-click, но wheel zoom намеренно не включён;
+- vendor attribution/UI не скрываются и не модифицируются. В проекте нет активного CSP header, поэтому Release 8 не ослабляет CSP; при будущем включении CSP потребуется точечный allowlist официальных Yandex script/network/style origins после проверки production deployment.
+
+### Why
+
+- выбор соответствует утверждённому визуальному источнику и русскоязычному сценарию;
+- lazy loading не отправляет запрос провайдеру на Home и default Genplan;
+- SSR fallback сохраняет основной пользовательский путь независимо от внешнего сервиса;
+- adapter boundary позволяет заменить провайдера без миграции business data, API и public URL;
+- точные decimal strings остаются persistence contract, а float применяется только после сериализации для SDK и производного Haversine distance.
+
+### Alternatives considered
+
+- iframe/embed: слабее контролируются markers, filters, selection, deep links и teardown;
+- provider-neutral abstraction без выбранного SDK: не закрывает реальный Release 8 и противоречит макету;
+- хранение raw vendor features/HTML: связывает данные с SDK и создаёт XSS/validation boundary;
+- загрузка SDK на всех страницах: лишний внешний запрос, privacy/performance cost и failure surface;
+- отдельные координаты посёлка в Genplan: дублируют уже существующего Settings owner.
+
+### Consequences
+
+- перед production требуется реальный ограниченный Yandex browser key и отдельный smoke-test загрузки tiles/attribution на разрешённом origin;
+- замена provider выполняется новым adapter и config при сохранении public DTO/URL/domain contracts;
+- изменение public slug после публикации требует redirect strategy;
+- API availability, pricing и условия Yandex остаются внешней операционной зависимостью и проверяются перед production rollout;
+- Release 8 не добавляет booking, payment, account, маршрутизацию пользователя или Release 9 SEO/production automation.

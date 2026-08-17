@@ -12,25 +12,30 @@ final readonly class GenplanPageState
         public ?Quarter $selectedQuarter,
         public ?InfrastructurePoint $selectedInfrastructure,
         public ?Plot $selectedPlot,
+        public ?SurroundingPlace $selectedSurroundingPlace,
         public bool $incomplete,
     ) {}
 
     /**
      * @param  Collection<int, Quarter>  $quarters
      * @param  Collection<int, InfrastructurePoint>  $infrastructure
+     * @param  Collection<int, SurroundingPlace>  $surroundings
      */
     public static function resolve(
         ?string $view,
         ?string $mode,
         ?string $quarter,
         ?string $point,
+        ?string $place,
         Collection $quarters,
         Collection $infrastructure,
+        Collection $surroundings,
     ): self {
         $activeTab = $view === 'surroundings' ? 'surroundings' : 'genplan';
         $activeMode = GenplanMode::tryFrom($mode ?? '') ?? GenplanMode::default();
         $selectedQuarter = null;
         $selectedInfrastructure = null;
+        $selectedSurroundingPlace = null;
 
         if ($activeTab === 'genplan') {
             $quarterCandidate = $quarter
@@ -50,6 +55,10 @@ final readonly class GenplanPageState
                     $selectedInfrastructure = $pointCandidate;
                 }
             }
+        } elseif ($place) {
+            $selectedSurroundingPlace = $surroundings->first(
+                fn (SurroundingPlace $record): bool => $record->slug === $place,
+            );
         }
 
         $hasGeometry = $quarters->contains(fn (Quarter $record): bool => (bool) $record->geometryFor($activeMode))
@@ -61,6 +70,7 @@ final readonly class GenplanPageState
             selectedQuarter: $selectedQuarter,
             selectedInfrastructure: $selectedInfrastructure,
             selectedPlot: null,
+            selectedSurroundingPlace: $selectedSurroundingPlace,
             incomplete: ! $hasGeometry,
         );
     }
@@ -78,6 +88,7 @@ final readonly class GenplanPageState
             selectedQuarter: $this->selectedQuarter,
             selectedInfrastructure: $this->selectedInfrastructure,
             selectedPlot: $selectedPlot,
+            selectedSurroundingPlace: $this->selectedSurroundingPlace,
             incomplete: $this->incomplete,
         );
     }

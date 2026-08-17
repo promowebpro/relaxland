@@ -124,8 +124,8 @@ class PublicGenplanTest extends TestCase
         $missingTwoD = InfrastructurePoint::factory()->create(['genplan_id' => $genplan->id, 'name' => 'Без 2D']);
         $missingTwoD->geometries()->where('mode', '2d')->delete();
         InfrastructurePoint::factory()->create(['genplan_id' => $genplan->id, 'is_active' => false]);
-        SurroundingPlace::factory()->create(['name' => 'Школа']);
-        SurroundingPlace::factory()->create(['is_active' => false]);
+        SurroundingPlace::factory()->create(['genplan_id' => $genplan->id, 'name' => 'Школа']);
+        SurroundingPlace::factory()->create(['genplan_id' => $genplan->id, 'is_active' => false]);
 
         $this->getJson(route('api.genplan.infrastructure', ['mode' => '2d']))
             ->assertOk()

@@ -24,4 +24,22 @@ enum SurroundingCategory: string
             self::Transport => 'Транспорт',
         };
     }
+
+    public function symbol(): string
+    {
+        return match ($this) {
+            self::Education => 'О',
+            self::Shopping => 'М',
+            self::Healthcare => '+',
+            self::Food => 'Е',
+            self::Entertainment => 'Д',
+            self::Sport => 'С',
+            self::Transport => 'Т',
+        };
+    }
+
+    public function order(): int
+    {
+        return array_search($this, self::cases(), true);
+    }
 }

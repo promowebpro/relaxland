@@ -138,14 +138,31 @@ class GenplanPublicQuery
     }
 
     /** @return Collection<int, SurroundingPlace> */
-    public function surroundings(): Collection
+    public function surroundings(?SurroundingCategory $category = null, ?Genplan $genplan = null): Collection
     {
+        $genplan ??= $this->current();
+
+        if (! $genplan) {
+            return new Collection;
+        }
+
         return SurroundingPlace::query()
-            ->select(['id', 'name', 'category', 'latitude', 'longitude', 'description', 'external_url', 'sort_order', 'is_active'])
-            ->active()
+            ->select([
+                'id', 'genplan_id', 'name', 'slug', 'category', 'latitude', 'longitude',
+                'description', 'image', 'external_url', 'sort_order', 'is_active',
+            ])
+            ->publiclyVisible($genplan)
+            ->when($category, fn ($query) => $query->where('category', $category->value))
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
+    }
+
+    public function surroundingPlace(string $slug): ?SurroundingPlace
+    {
+        return $this->surroundings()->first(
+            fn (SurroundingPlace $place): bool => $place->slug === $slug,
+        );
     }
 
     private function quarterBaseQuery(Genplan $genplan)

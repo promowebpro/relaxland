@@ -6,6 +6,7 @@ use App\Domain\Genplan\GenplanMode;
 use App\Domain\Genplan\GenplanPublicQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PlotListRequest;
+use App\Http\Requests\SurroundingsRequest;
 use App\Http\Resources\GenplanOverviewResource;
 use App\Http\Resources\InfrastructurePointResource;
 use App\Http\Resources\PlotResource;
@@ -51,9 +52,9 @@ class GenplanApiController extends Controller
         return InfrastructurePointResource::collection($query->infrastructure($this->mode($request)));
     }
 
-    public function surroundings(GenplanPublicQuery $query): AnonymousResourceCollection
+    public function surroundings(SurroundingsRequest $request, GenplanPublicQuery $query): AnonymousResourceCollection
     {
-        return SurroundingPlaceResource::collection($query->surroundings());
+        return SurroundingPlaceResource::collection($query->surroundings($request->category()));
     }
 
     private function mode(Request $request): GenplanMode

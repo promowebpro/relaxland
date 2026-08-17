@@ -2,21 +2,25 @@ import { normalizeState, stateFromRoot } from './core/state';
 import { createStage } from './core/stage';
 import { stateFromUrl, writeStateUrl } from './core/url-state';
 import { createPlots } from './interactions/plots';
+import { createSurroundings } from './interactions/surroundings';
 
 document.querySelectorAll('[data-genplan-foundation]').forEach((root) => {
     const stage = createStage(root);
     let state = normalizeState(stateFromRoot(root), stage);
     let lastSelectionTrigger = null;
     let plots = null;
+    let surroundings = null;
 
     const commit = (candidate, options = {}) => {
         state = normalizeState(candidate, stage);
         stage.render(state);
         plots?.render(state);
+        surroundings?.render(state);
         if (options.history !== false) writeStateUrl(state, { replace: options.replace });
     };
 
     plots = createPlots(root, { getState: () => state, commit });
+    surroundings = createSurroundings(root, { getState: () => state, commit });
 
     const selectQuarter = (trigger) => {
         if (trigger.getAttribute('aria-disabled') === 'true') return;
@@ -39,7 +43,22 @@ document.querySelectorAll('[data-genplan-foundation]').forEach((root) => {
 
         if (view) {
             event.preventDefault();
-            commit({ ...state, activeTab: view.dataset.genplanView, selectedQuarter: null, selectedInfrastructure: null, selectedPlot: null, plotsOpen: false });
+            const nextTab = view.dataset.genplanView;
+            if (nextTab !== 'surroundings') surroundings.destroy();
+            commit({
+                ...state,
+                activeTab: nextTab,
+                selectedQuarter: null,
+                selectedInfrastructure: null,
+                selectedPlot: null,
+                selectedSurroundingPlace: null,
+                plotsOpen: false,
+                mapLoading: false,
+                mapReady: nextTab === 'surroundings' ? state.mapReady : false,
+                mapError: null,
+                providerStatus: nextTab === 'surroundings' ? state.providerStatus : 'idle',
+            });
+            if (nextTab === 'surroundings') surroundings.ensure(state);
         } else if (mode) {
             event.preventDefault();
             commit({ ...state, mode: mode.dataset.genplanMode });
@@ -77,6 +96,13 @@ document.querySelectorAll('[data-genplan-foundation]').forEach((root) => {
             return;
         }
 
+        if (event.key === 'Escape' && state.selectedSurroundingPlace) {
+            event.preventDefault();
+            commit({ ...state, selectedSurroundingPlace: null });
+            surroundings.focusLastPlace();
+            return;
+        }
+
         if (event.key === 'Escape' && (state.selectedQuarter || state.selectedInfrastructure)) {
             event.preventDefault();
             commit({ ...state, selectedQuarter: null, selectedInfrastructure: null, selectedPlot: null, plotsOpen: false });
@@ -94,7 +120,10 @@ document.querySelectorAll('[data-genplan-foundation]').forEach((root) => {
         if (next !== index) {
             event.preventDefault();
             stage.tabs[next].focus();
-            commit({ ...state, activeTab: stage.tabs[next].dataset.genplanView, selectedQuarter: null, selectedInfrastructure: null, selectedPlot: null, plotsOpen: false });
+            const nextTab = stage.tabs[next].dataset.genplanView;
+            if (nextTab !== 'surroundings') surroundings.destroy();
+            commit({ ...state, activeTab: nextTab, selectedQuarter: null, selectedInfrastructure: null, selectedPlot: null, selectedSurroundingPlace: null, plotsOpen: false, mapLoading: false, mapReady: false, mapError: null, providerStatus: 'idle' });
+            if (nextTab === 'surroundings') surroundings.ensure(state);
         }
     });
 
@@ -109,9 +138,14 @@ document.querySelectorAll('[data-genplan-foundation]').forEach((root) => {
 
     window.addEventListener('resize', () => stage.render(state), { passive: true });
     window.addEventListener('popstate', () => {
-        commit({ ...stateFromUrl(), loading: false, error: null }, { history: false });
+        const urlState = stateFromUrl();
+        if (urlState.activeTab !== 'surroundings') surroundings.destroy();
+        commit({ ...state, ...urlState, activeSurroundingCategories: stage.surroundingCategories, loading: false, error: null }, { history: false });
         if (state.selectedQuarter) plots.ensure(state);
+        if (state.activeTab === 'surroundings') surroundings.ensure(state);
     });
     stage.render(state);
     plots.render(state);
+    surroundings.render(state);
+    if (state.activeTab === 'surroundings') surroundings.ensure(state);
 });

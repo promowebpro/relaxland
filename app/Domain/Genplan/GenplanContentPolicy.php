@@ -35,7 +35,9 @@ class GenplanContentPolicy
         }
 
         return match (true) {
-            $record instanceof Genplan => ! $record->quarters()->exists() && ! $record->infrastructurePoints()->exists(),
+            $record instanceof Genplan => ! $record->quarters()->exists()
+                && ! $record->infrastructurePoints()->exists()
+                && ! $record->surroundingPlaces()->exists(),
             $record instanceof Quarter => ! $record->plots()->exists(),
             default => true,
         };

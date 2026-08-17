@@ -2,9 +2,9 @@
 
 ## Current Release
 
-Release 7 — Public Plot Selection: **IMPLEMENTED**.
+Release 8 — Surroundings Map: **IMPLEMENTED — PRODUCTION KEY QA PENDING**.
 
-SSR `/genplan` и progressive JavaScript реализуют доступный выбор участков внутри квартала, controlled filters/sort, mode-specific Plot geometry, URL deep links, History API, on-demand API loading и безопасный переход в существующую consultation Lead form. Полноценная Surroundings map (Release 8) не начиналась.
+SSR `/genplan` и progressive JavaScript реализуют карту окружения с controlled POI, категориями, stable Place deep links, desktop sidebar/mobile bottom sheet, lazy Yandex v3 adapter и полным fallback без ключа/SDK. Реальный provider smoke-test не заявлен: в окружении нет production browser key с HTTP Referer restriction. Release 9 не начинался.
 
 ## Completed Releases
 
@@ -136,6 +136,21 @@ SSR `/genplan` и progressive JavaScript реализуют доступный �
 - Browser QA выполнен на 360/390/768/1024/1280/1440 px; проверены 2D/3D, missing geometry, фильтры, empty/error/retry, request race, keyboard/focus, direct links и Lead modal context.
 - Release 7 regression: 11 tests / 70 assertions; полный suite: 106 tests / 596 assertions.
 
+### Release 8 — Surroundings Map
+
+- Дата: 2026-08-17.
+- `SurroundingPlace` получил обязательную Genplan relationship, stable per-Genplan public slug, optional Storage image и migration/backfill с FK `RESTRICT`, composite unique и public index.
+- Geographic contract отделён от ADR-005 canvas: typed decimal strings до 7 знаков, ranges latitude `-90..90` / longitude `-180..180`, fail-closed scope и numeric DTO только на границе API/SDK.
+- Координаты посёлка переиспользуют единственного владельца — public Site Settings `contacts.village_latitude/longitude`; parallel Genplan fields не создавались. Haversine distance является только производным label «по прямой».
+- Public query/API ограничены текущим active Genplan, active Place, controlled category и валидными coordinates; DTO не содержит IDs/timestamps/admin fields/vendor JSON, unsafe external URL/image скрываются.
+- SSR `/genplan?view=surroundings` отдаёт heading, settlement state, present-category filters, список, distance, route links и Place cards. Без JavaScript, key или provider основной сценарий остаётся рабочим.
+- Yandex Maps JavaScript API v3 загружается только при первом открытии Surroundings. Adapter управляет settlement/place markers, fit/zoom/select/update/destroy; controlled DOM создаётся через `textContent`, failed script удаляется, retry и stale-init защищены.
+- URL contract расширен `place={public-slug}` только с `view=surroundings`; Quarter/Plot/Infrastructure и неизвестные query очищаются, SSR/JS согласованы, Back/close/Escape и focus restore проверены.
+- Category filters синхронизируют список/markers/card; desktop использует map + sidebar, mobile — pinch-only map и non-modal bottom sheet без захвата однопальцевого page scroll.
+- Filament SurroundingPlace дополнен Genplan, slug, image, decimal ranges, HTTPS URL и controlled category validation; delete active Genplan дополнительно защищён при наличии Places. Координаты посёлка редактируются в существующей Site Settings page.
+- Выбор Yandex, lazy/fallback/security/CSP/replacement boundary зафиксированы в `docs/DECISIONS.md` (ADR-007), visual/provider QA — в `docs/VISUAL_QA.md`.
+- Release 8 regression: 12 PHP tests / 93 assertions и 2 Node adapter tests; полный PHP suite: 118 tests / 691 assertions.
+
 ## Current Architecture
 
 - Laravel/Blade приложение находится в корне репозитория; документация — в `docs/`.
@@ -178,7 +193,7 @@ Filament Shield не установлен и не требуется текущ�
 - `quarter_geometries` — Quarter FK, typed mode, normalized polygon/label и unique `quarter_id + mode`.
 - `plot_geometries` — Plot FK, typed mode, optional normalized polygon/marker и unique `plot_id + mode`.
 - `infrastructure_point_geometries` — InfrastructurePoint FK, typed mode, normalized marker и unique `infrastructure_point_id + mode`.
-- `surrounding_places` — provider-neutral controlled category, decimal latitude/longitude, description/external URL, order и active state.
+- `surrounding_places` — Genplan FK, per-Genplan stable public slug, provider-neutral controlled category, decimal latitude/longitude, description, optional Storage image/HTTPS route URL, order и active state.
 - `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs` — инфраструктура Laravel.
 
 ## Roles & Permissions
@@ -219,7 +234,7 @@ Release 1 не добавлял новые permissions. Используются
 - Multi-view Geometry — READY.
 - Genplan Interactions — READY.
 - Plot domain/admin/API/public selection — READY.
-- Surroundings domain/admin/API foundation — READY; full map — NOT STARTED (Release 8).
+- Surroundings domain/admin/API/public map — READY; real Yandex provider smoke-test — PENDING PRODUCTION KEY.
 - Full SEO module — NOT STARTED.
 
 ## Public Routes
@@ -233,8 +248,8 @@ Release 1 не добавлял новые permissions. Используются
 - `leads.store`: `POST /leads` — единый endpoint публичных заявок; отдельной публичной страницы/GET API Leads нет.
 - `blog.index`: `GET /blog`.
 - `blog.show`: `GET /blog/{slug}`.
-- `genplan.index`: `GET /genplan` — SSR interactions/empty state; controlled query: `view=surroundings`, `mode=2d|3d`, `quarter={public-slug}`, `point={public-slug}`, `plot={quarter-scoped-public-slug}` и Plot filters/sort.
-- `api.genplan.*`: read-only `GET /api/genplan`, Quarter и Infrastructure принимают controlled `mode=2d|3d`; Quarter plots дополнительно принимает controlled status/area/price/sort, не отдаёт internal IDs/attributes; Surroundings geometry mode не использует.
+- `genplan.index`: `GET /genplan` — SSR interactions/empty state; controlled query: `view=surroundings&place={public-slug}`, `mode=2d|3d`, `quarter={public-slug}`, `point={public-slug}`, `plot={quarter-scoped-public-slug}` и Plot filters/sort.
+- `api.genplan.*`: read-only `GET /api/genplan`, Quarter и Infrastructure принимают controlled `mode=2d|3d`; Quarter plots принимает controlled status/area/price/sort; Surroundings принимает optional controlled category и отдаёт только текущие active/valid POI без internal IDs/provider data.
 - Неизвестные URL используют `resources/views/errors/404.blade.php` и сохраняют HTTP 404.
 
 Пункты Blog и Genplan в общем navigation config активированы. Для Plots и других будущих public разделов фиктивные routes/страницы не создавались.
@@ -262,6 +277,7 @@ Release 1 не добавлял новые permissions. Используются
 - `responsive-image` и фиксированная `pages/home.blade.php` для главной.
 - `pages/about.blade.php` как фиксированная композиция на существующих Home/Settings data.
 - `pages/genplan/index.blade.php` как SSR interaction shell; `resources/js/genplan/foundation.js`, `core/state.js`, `core/url-state.js` и `core/stage.js` реализуют controlled state, History API и доступную синхронизацию.
+- `resources/js/genplan/interactions/surroundings.js` и `map/yandex-v3-adapter.js` изолируют lazy provider lifecycle от общего Genplan state; без SDK остаётся полноценный SSR list/card flow.
 - Settings передаются в header/footer/pages из одного typed/cached механизма.
 - Mobile menu поддерживает keyboard Escape, focus trap, `aria-expanded`, блокировку фонового scroll и возврат фокуса.
 - Видимый focus, semantic landmarks и reduced-motion предусмотрены в общем CSS.
@@ -281,6 +297,7 @@ Release 1 не добавлял новые permissions. Используются
 - Home Blog preview выбирает только необходимые поля и eager-loads category; публичные visibility scopes не дублируются.
 - Session first-touch UTM и snapshot юридического согласия являются долгосрочным Lead contract; решение зафиксировано в `docs/DECISIONS.md` (ADR-004).
 - Normalized Genplan geometry `0..1`, view-specific `2d|3d` records, запрет cross-mode fallback, exact polygon shape и безопасный SVG mapping являются долгосрочным contract; решение зафиксировано в `docs/DECISIONS.md` (ADR-005).
+- Geographic POI используют отдельные decimal latitude/longitude, Yandex v3 находится за adapter boundary, а existing Settings остаются единственным владельцем settlement point; решение зафиксировано в `docs/DECISIONS.md` (ADR-007).
 
 ## Protected / Existing Functionality
 
@@ -308,9 +325,9 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Known Technical Debt
 
-- MySQL 8+ недоступен в текущем окружении (`127.0.0.1:3306`), поэтому миграции Release 0–6 проверены только на SQLite. Миграции используют portable Laravel Schema/Query API, JSON, DECIMAL, FK и composite unique, но перед production обязателен полный migration/rollback check на MySQL 8+.
+- MySQL 8+ недоступен в текущем окружении (`127.0.0.1:3306`). Полная схема Release 0–8 и отдельный forward/backfill/rollback Release 8 проверены на SQLite. Migrations используют portable Laravel Schema/Query API, JSON, DECIMAL, FK и composite unique, но перед production обязателен полный migration/rollback check на MySQL 8+; MySQL PASS не заявлен.
 - Production mail transport/получатель не настроены; уведомления о новых Leads намеренно отложены вместо фиктивного mail flow. Заявка сохраняется и сразу доступна в Filament.
-- Постоянный картографический provider не выбран; Contacts использует безопасный presentation fallback без API key.
+- Yandex Maps JavaScript API v3 выбран для Surroundings, но production browser key отсутствует. До rollout нужны HTTP Referer restriction, проверка разрешённого origin, tiles/attribution/events и актуальных provider terms/tariff; SSR fallback уже работает без ключа. Contacts сохраняет прежний presentation fallback.
 - Контакты, координаты, route links и юридические документы должны быть заполнены фактическими данными через Filament.
 - Точный фирменный display-font и отдельный исходник иллюстрации 404 отсутствуют; используются системный serif fallback и типографическая композиция до передачи исходников.
 - Полноценный production image pipeline с автоматическими AVIF/srcset-производными не внедряется в Release 3A; утверждённые PDF-фотографии готовятся в контролируемых WebP-размерах.
@@ -333,12 +350,14 @@ Release 1 не добавлял новые permissions. Используются
 - Release 5 admin: unauthenticated/role access, view/manage separation, all five CRUD routes, invalid Repeater geometry и protected parent deletion.
 - Release 5A: mode uniqueness/enum, независимые 2D/3D coordinates, отсутствие fallback, API default/validation, SSR layer clearing, dual-mode Filament save, mobile compatibility guard, forward/rollback legacy migration и отсутствие Leads у viewer.
 - Release 6: SSR/query state, public slugs, invalid/hidden/missing-mode selection, mutual exclusion, no Plot/N+1 boundary, safe cards/API и browser keyboard/History interactions.
+- Release 7: Quarter-scoped Plot loading, controlled filters/sort, mode-specific geometry without fallback, stable Plot deep links, exact decimal presentation, safe Lead context, request race/error recovery и browser keyboard/focus interactions.
+- Release 8: geographic decimal boundaries, Genplan-scoped visibility/slug migration, controlled API/filter/422/query count, SSR/deep links/XSS/fallback/distance, Filament RBAC/validation, lazy SDK contract и provider adapter lifecycle без duplicates.
 - Полный Release 0 regression suite сохранён и проходит.
 
 ## Pending Work
 
-- Следующий этап по SPEC — Release 8 Surroundings map, только после отдельного задания.
-- Затем остаётся Release 9 production QA/SEO.
+- Следующий этап по SPEC — Release 9 production QA/SEO, только после отдельного задания.
+- До Release 9/pre-production отдельно требуется real-provider smoke-test с ограниченным Yandex browser key; это не повод начинать booking/payment/account.
 - До production: MySQL 8+ migration check, реальные settings/legal/blog/Genplan data, 2D/3D/mobile plan assets, exact display-font и standalone 404 mascot при их передаче.
 
 ## Last Verification
@@ -347,14 +366,16 @@ Release 1 не добавлял новые permissions. Используются
 - `composer audit --locked` — PASS, advisories отсутствуют.
 - После временных timeout/502 Packagist повторный строгий `composer audit --locked` завершился успешно; advisories отсутствуют.
 - `npm audit --audit-level=moderate` — PASS, 0 vulnerabilities.
-- `php artisan test` — PASS, 106 tests / 596 assertions после Release 7.
+- `php artisan test` — PASS, 118 tests / 691 assertions после Release 8.
 - `php artisan migrate:fresh --seed` — PASS на SQLite.
 - rollback двух Home/Story migrations, повторное применение и финальный fresh/seed — PASS на SQLite.
 - Release 4 `migrate:fresh --seed`, rollback Leads migration и повторный migrate — PASS на SQLite; `assigned_to`/`privacy_document_id` используют `SET NULL`, обязательные индексы присутствуют.
 - Release 5 `migrate:fresh --seed`, rollback `2026_08_13_150000_create_genplan_foundation_tables` и повторный migrate — PASS на отдельной SQLite verification DB; production/local data не очищались.
 - Release 5A forward migration legacy→`3d`, отсутствие автоматического `2d`, rollback `3d`→legacy и повторный migrate — PASS в integration test и на отдельной SQLite verification DB.
 - Release 6 public slug migration: forward/backfill/`NOT NULL`/per-Genplan unique, rollback и повторный migrate — PASS на SQLite; `migrate:fresh --seed` также PASS на `:memory:` verification DB.
+- Release 8 SurroundingPlace migration: Genplan backfill, stable slug suffixing, `NOT NULL`, per-Genplan unique, FK/index, rollback — PASS в отдельном SQLite integration test.
 - `vendor/bin/pint` и `vendor/bin/pint --test` — PASS.
+- `npm run test:js` — PASS, 2 adapter lifecycle tests.
 - `npm run build` — PASS, Vite 7.3.6.
 - `php artisan view:cache` — PASS.
 - Основные public/admin routes зарегистрированы и проверены feature-тестами.
@@ -368,6 +389,7 @@ Release 1 не добавлял новые permissions. Используются
 - Browser interactions Release 5: 2D/3D background + marker visibility, pointer/keyboard Quarter selection, Genplan/Surroundings tabs, mobile menu Escape/focus — PASS; console warning/error log пуст.
 - Browser QA Release 6: 360/390/768/1024/1280/1440 (дополнительно 320), default/2D/3D, Quarter/Infrastructure cards, close, mode-compatible persistence, missing geometry clear, tabs, Lead modal, direct links и Back/Forward — PASS; overflow и console warnings/errors отсутствуют.
 - Browser QA Release 7: 360/390/768/1024/1280/1440, Plot list/polygon/card, available/reserved/sold, filters/sort/empty, real network failure + retry, rapid 3D→2D race, mode-specific coordinates, missing geometry, direct Plot URL, Escape/focus и safe Lead context — PASS; overflow и console warnings/errors отсутствуют.
+- Browser QA Release 8: SSR list/card/filter/deep-link/focus/fallback на 360/390/768/1024/1280/1440 без overflow; invalid query canonicalization, missing image/route, provider failure/retry и repeated tab cycles — PASS. Adapter test double — PASS; real Yandex provider — PENDING PRODUCTION KEY.
 - Release 5A preflight перед Release 6: distinct polygon/label/marker coordinates на 390/1280, coordinated background/layer switch и отсутствие fallback — PASS; найденный пробел Quarter label renderer исправлен.
 - Filament browser QA: группа «Посёлок», пять CRUD listing/create routes и structured Quarter `x/y` Repeater — PASS.
 - В публичных Vite assets нет ссылок на Filament — PASS.
@@ -376,4 +398,4 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Last Updated
 
-2026-08-17 — Release 7 завершён: progressive Quarter-scoped Plot loading, filters/sort, mode-safe SVG/list/card interactions, Plot deep links, exact money presentation, safe Lead context, error/race handling, расширение ADR-006 и полная browser/test verification; Release 8 не начинался.
+2026-08-17 — Release 8 завершён со статусом `IMPLEMENTED — PRODUCTION KEY QA PENDING`: provider-neutral POI, geographic contract, scoped migration/API/Filament, SSR fallback, lazy Yandex v3 adapter, category/list/marker/card state, Place deep links, failure/retry, responsive browser QA и полный regression; Release 9 не начинался.

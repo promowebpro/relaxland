@@ -128,7 +128,8 @@ class GenplanInteractionsTest extends TestCase
             ->assertSee('data-initial-tab="surroundings"', false)
             ->assertSee('data-initial-quarter=""', false)
             ->assertSee('data-initial-point=""', false)
-            ->assertSee('Provider-neutral map foundation')
+            ->assertSee('Карта дополняет список')
+            ->assertSee('data-surroundings-map', false)
             ->assertDontSee('iframe', false);
     }
 
@@ -144,7 +145,7 @@ class GenplanInteractionsTest extends TestCase
 
         $this->get(route('genplan.index'))->assertOk();
 
-        $this->assertCount(10, $queries);
+        $this->assertLessThanOrEqual(11, count($queries));
         $this->assertFalse(collect($queries)->contains(fn (string $sql): bool => str_contains($sql, 'plots')));
     }
 

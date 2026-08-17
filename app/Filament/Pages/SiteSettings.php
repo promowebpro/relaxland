@@ -97,8 +97,8 @@ class SiteSettings extends Page
                         TextInput::make('travel_time')->label('Информация о времени поездки')->maxLength(255)->disabled($readOnly),
                         Textarea::make('office_address')->label('Адрес офиса')->rows(3)->disabled($readOnly),
                         Textarea::make('village_address')->label('Адрес посёлка')->rows(3)->disabled($readOnly),
-                        TextInput::make('village_latitude')->label('Широта')->numeric()->minValue(-90)->maxValue(90)->disabled($readOnly),
-                        TextInput::make('village_longitude')->label('Долгота')->numeric()->minValue(-180)->maxValue(180)->disabled($readOnly),
+                        TextInput::make('village_latitude')->label('Широта посёлка')->numeric()->step(0.0000001)->minValue(-90)->maxValue(90)->disabled($readOnly),
+                        TextInput::make('village_longitude')->label('Долгота посёлка')->numeric()->step(0.0000001)->minValue(-180)->maxValue(180)->disabled($readOnly),
                         Textarea::make('notice')->label('Предупреждение на странице контактов')->rows(3)->columnSpanFull()->disabled($readOnly),
                     ]),
                 Section::make('Социальные сети')

@@ -15,6 +15,7 @@ export const createStage = (root) => {
     const modeControls = [...root.querySelectorAll('[data-genplan-mode]')];
     const panels = [...root.querySelectorAll('[data-genplan-panel]')];
     const tabs = [...root.querySelectorAll('[data-genplan-view]')];
+    const surroundingTriggers = [...root.querySelectorAll('[data-surrounding-trigger]')];
     const layers = stage ? [...stage.querySelectorAll('[data-geometry-mode]')] : [];
     const emptyStates = stage ? [...stage.querySelectorAll('[data-genplan-geometry-empty]')] : [];
     const cards = [...root.querySelectorAll('[data-quarter-card], [data-point-card]')];
@@ -27,6 +28,8 @@ export const createStage = (root) => {
         && (trigger.dataset.triggerMode === mode || trigger.dataset.quarterModes?.split(',').includes(mode)));
     const hasPoint = (slug, mode) => pointTriggers.some((trigger) => trigger.dataset.pointSlug === slug && trigger.dataset.triggerMode === mode);
     const hasAnyGeometry = (mode) => emptyStates.find((item) => item.dataset.genplanGeometryEmpty === mode)?.dataset.hasGeometry === 'true';
+    const hasSurroundingPlace = (slug) => surroundingTriggers.some((trigger) => trigger.dataset.placeSlug === slug);
+    const surroundingCategories = [...new Set(surroundingTriggers.map((trigger) => trigger.dataset.placeCategory).filter(Boolean))];
 
     const render = (state) => {
         root.dataset.loading = state.loading ? 'true' : 'false';
@@ -77,5 +80,5 @@ export const createStage = (root) => {
             .forEach((trigger) => trigger.classList.toggle('is-hovered', active));
     };
 
-    return { render, hasQuarter, hasPoint, hasAnyGeometry, highlightQuarter, tabs };
+    return { render, hasQuarter, hasPoint, hasAnyGeometry, hasSurroundingPlace, surroundingCategories, highlightQuarter, tabs };
 };

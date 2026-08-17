@@ -2,6 +2,8 @@
 
 namespace App\Domain\Settings;
 
+use App\Domain\Genplan\GeographicPoint;
+
 class SiteSettings
 {
     /**
@@ -56,5 +58,15 @@ class SiteSettings
         $normalized = preg_replace('/[^\d+]/u', '', $phone);
 
         return filled($normalized) ? 'tel:'.$normalized : null;
+    }
+
+    public function settlementPoint(): ?GeographicPoint
+    {
+        $settings = $this->all();
+
+        return GeographicPoint::tryFrom(
+            $settings['contacts.village_latitude'],
+            $settings['contacts.village_longitude'],
+        );
     }
 }

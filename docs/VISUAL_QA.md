@@ -176,3 +176,38 @@ Plots не запрашиваются и в markup Release 6 не передаю
 Accessibility/interaction QA: list и SVG используют один `selectedPlot`; hover/focus синхронизированы; Enter/Space выбирают Plot; Escape закрывает Plot card до Quarter state; после DOM re-render focus возвращается на новый эквивалентный trigger; mobile targets не меньше 44 px; non-modal bottom sheet не создаёт второй focus trap; открытие существующей Lead modal скрывает mobile Plot sheet визуально и передаёт Quarter/Plot context в scoped hidden inputs.
 
 URL/History QA: `quarter`, `plot`, filters и sort синхронизируются через History API; невалидная relationship не выбирает Plot; close/Escape удаляют только `plot`; Surroundings/Infrastructure очищают Plot state. Browser console warning/error log пуст, все шесть контрольных ширин без document overflow. Полный map provider остаётся Release 8.
+
+# Release 8 — Surroundings Map Visual QA
+
+Дата проверки: 2026-08-17.
+
+Источник визуальной истины — Surroundings state в `docs/design/genplan.png`: desktop map/sidebar и mobile map/bottom sheet. `docs/design/contacts.pdf` дополнительно подтверждает язык map fallback и отдельной route card. Новые controls продолжают существующую систему: pale-blue shell, белые cards, тёмные pill actions и controlled category symbols; произвольные SVG/HTML icons из CMS не используются.
+
+Локальный QA fixture содержит один active Genplan, координаты посёлка в существующих Settings и шесть active SurroundingPlace в пяти категориях. У всех мест отсутствует image, у одного отсутствует external URL — эти состояния проверены без broken image и пустого действия. Fixture находится только в локальной SQLite и не входит в migrations/seed/commit.
+
+| Release 8 / ширина | 360 | 390 | 768 | 1024 | 1280 | 1440 |
+| --- | --- | --- | --- | --- | --- | --- |
+| No horizontal overflow | PASS | PASS | PASS | PASS | PASS | PASS |
+| SSR list + category filters | PASS | PASS | PASS | PASS | PASS | PASS |
+| Selection card composition | Bottom sheet | Bottom sheet | Sidebar | Sidebar | Sidebar | Sidebar |
+| Close control target | 44×44 | 44×44 | 44×44 | 44×44 | 44×44 | 44×44 |
+| Missing image / route URL | PASS | PASS | PASS | PASS | PASS | PASS |
+| Missing-key fallback | PASS | PASS | PASS | PASS | PASS | PASS |
+
+## Честное разделение результатов
+
+- **SSR/progressive fallback — PASS.** Без key и без внешнего SDK доступны заголовок, координаты, present-category filters, шесть мест, straight-line distance labels, карточка, deep link и безопасные route links. Home и default `/genplan` SDK не загружают.
+- **Provider adapter с test double — PASS.** Node test проверяет distinct settlement/place markers, controlled text DOM, click selection, aria state, bounds, zoom, category update без duplicate markers, destroy и удаление failed SDK scripts перед новой попыткой.
+- **Негативный browser provider test — PASS.** Заведомо недействительный локальный key даёт controlled `provider_unavailable`, сохраняет список, показывает retry, не пишет warning/error в browser console и после трёх повторных tab cycles оставляет `0` failed SDK scripts.
+- **Реальный Yandex provider — PENDING PRODUCTION KEY.** В окружении нет production browser key с HTTP Referer restriction, поэтому tiles, vendor attribution и реальный provider event lifecycle не объявляются проверенными. Этот пункт обязателен до production rollout.
+
+## Проверенные interaction/state сценарии
+
+- direct `/genplan?view=surroundings&place={slug}` восстанавливает карточку; invalid/inactive slug очищается без 500;
+- произвольные query, `quarter`, `plot` и `point` не сохраняются рядом с Place; URL содержит только controlled `view + place`, internal IDs отсутствуют;
+- выбор из списка синхронизирует item/card/URL, close сохраняет Surroundings и возвращает focus на trigger; browser Back закрывает selection;
+- отключение категории выбранного места закрывает карточку; отключение всех категорий показывает empty state; «Показать все» восстанавливает шесть мест;
+- повторные входы Genplan↔Surroundings не оставляют failed script или marker duplicates; stale async result защищён generation token;
+- расстояние подписано «по прямой» и скрывается при отсутствии settlement point; missing route URL не создаёт пустую ссылку;
+- mobile bottom sheet non-modal, map help сообщает про pinch zoom, однопальцевый scroll страницы не блокируется; reduced-motion используется для focus/scroll/map transitions;
+- Browser QA выполнен на production Vite build. Финальная локальная вкладка оставлена на `http://127.0.0.1:8777/genplan?view=surroundings&place=mozhayskoe-more` в честном missing-key fallback.

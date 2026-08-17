@@ -10,6 +10,7 @@
     $initialQuarter = $pageState->selectedQuarter?->slug;
     $initialPoint = $pageState->selectedInfrastructure?->slug;
     $initialPlot = $pageState->selectedPlot?->slug;
+    $initialPlace = $pageState->selectedSurroundingPlace?->slug;
     $plotsOpen = (bool) $pageState->selectedQuarter;
     $initialPlotKey = $plotsOpen ? $initialQuarter.'|'.$initialMode->value : null;
     $initialImage = $genplan ? $disk->url($initialMode === \App\Domain\Genplan\GenplanMode::TwoD ? $genplan->image_2d : $genplan->image_3d) : null;
@@ -22,14 +23,26 @@
         ? $genplan->original_width.' / '.$genplan->original_height
         : '16 / 10';
     $quarterNumbers = $genplan?->quarters->values()->mapWithKeys(fn ($quarter, $index) => [$quarter->slug => str_pad($index + 1, 2, '0', STR_PAD_LEFT)]) ?? collect();
-    $stateUrl = function (array $state = []) use ($initialMode, $initialQuarter, $initialPoint, $initialPlot, $plotFilters) {
+    $initialSurroundingCategories = $surroundingCategories->map->value->implode(',');
+    $stateUrl = function (array $state = []) use ($pageState, $initialMode, $initialQuarter, $initialPoint, $initialPlot, $initialPlace, $plotFilters) {
         $query = array_merge([
+            'view' => $pageState->activeTab === 'surroundings' ? 'surroundings' : null,
             'mode' => $initialMode->value,
             'quarter' => $initialQuarter,
             'point' => $initialPoint,
             'plot' => $initialPlot,
+            'place' => $initialPlace,
             ...$plotFilters->query(),
         ], $state);
+
+        if (($query['view'] ?? null) === 'surroundings') {
+            $query = [
+                'view' => 'surroundings',
+                'place' => $query['place'] ?? null,
+            ];
+        } else {
+            unset($query['view'], $query['place']);
+        }
 
         $query = array_filter($query, fn ($value) => $value !== null && $value !== '' && $value !== 'genplan');
 
@@ -56,6 +69,8 @@
         data-initial-quarter="{{ $initialQuarter }}"
         data-initial-point="{{ $initialPoint }}"
         data-initial-plot="{{ $initialPlot }}"
+        data-initial-place="{{ $initialPlace }}"
+        data-initial-surrounding-categories="{{ $initialSurroundingCategories }}"
         data-initial-plots-open="{{ $plotsOpen ? 'true' : 'false' }}"
         data-initial-plots-loaded-for="{{ $initialPlotKey }}"
         data-initial-plot-status="{{ $plotFilters->status?->value }}"
@@ -70,8 +85,8 @@
     >
         <div class="site-container">
             <div class="genplan-view-tabs" role="tablist" aria-label="Режим территории" data-genplan-view-tabs>
-                <a href="{{ $stateUrl(['view' => null]) }}" role="tab" aria-selected="{{ $pageState->activeTab === 'genplan' ? 'true' : 'false' }}" aria-controls="genplan-panel" id="genplan-tab" @if ($pageState->activeTab !== 'genplan') tabindex="-1" @endif data-genplan-view="genplan">Генплан</a>
-                <a href="{{ $stateUrl(['view' => 'surroundings', 'quarter' => null, 'point' => null, 'plot' => null]) }}" role="tab" aria-selected="{{ $pageState->activeTab === 'surroundings' ? 'true' : 'false' }}" aria-controls="surroundings-panel" id="surroundings-tab" @if ($pageState->activeTab !== 'surroundings') tabindex="-1" @endif data-genplan-view="surroundings">Окружение</a>
+                <a href="{{ $stateUrl(['view' => null, 'place' => null]) }}" role="tab" aria-selected="{{ $pageState->activeTab === 'genplan' ? 'true' : 'false' }}" aria-controls="genplan-panel" id="genplan-tab" @if ($pageState->activeTab !== 'genplan') tabindex="-1" @endif data-genplan-view="genplan">Генплан</a>
+                <a href="{{ $stateUrl(['view' => 'surroundings', 'quarter' => null, 'point' => null, 'plot' => null, 'place' => null]) }}" role="tab" aria-selected="{{ $pageState->activeTab === 'surroundings' ? 'true' : 'false' }}" aria-controls="surroundings-panel" id="surroundings-tab" @if ($pageState->activeTab !== 'surroundings') tabindex="-1" @endif data-genplan-view="surroundings">Окружение</a>
             </div>
 
             <div id="genplan-panel" role="tabpanel" aria-labelledby="genplan-tab" data-genplan-panel="genplan" @if ($pageState->activeTab !== 'genplan') hidden @endif>
@@ -320,24 +335,119 @@
             </div>
 
             <div id="surroundings-panel" role="tabpanel" aria-labelledby="surroundings-tab" data-genplan-panel="surroundings" @if ($pageState->activeTab !== 'surroundings') hidden @endif>
-                <div class="surroundings-foundation">
-                    <div>
-                        <span class="eyebrow">Окружение</span>
-                        <h2>Важные места рядом</h2>
-                        <p>Картографический провайдер будет выбран на отдельном этапе. Сейчас доступен проверяемый список опубликованных мест.</p>
+                <section class="surroundings" aria-labelledby="surroundings-heading" data-surroundings-root data-provider-status="idle">
+                    <header class="surroundings__header">
+                        <div>
+                            <span class="eyebrow">Окружение</span>
+                            <h2 id="surroundings-heading">Самое важное рядом</h2>
+                        </div>
+                        <p>Посмотрите, где расположен RelaxLand и какие места доступны поблизости. Расстояния указаны по прямой, а не по автомобильному маршруту.</p>
+                    </header>
+
+                    <div class="surroundings__location">
+                        <span class="surroundings-category-icon surroundings-category-icon--settlement" aria-hidden="true">R</span>
+                        <div>
+                            <strong>Посёлок RelaxLand</strong>
+                            <p>{{ $settings['contacts.village_address'] ?: 'Адрес посёлка пока не опубликован.' }}</p>
+                            @if ($settlementPoint)
+                                <small>{{ $settlementPoint->latitude }}, {{ $settlementPoint->longitude }}</small>
+                            @else
+                                <small class="surroundings__incomplete">Координаты посёлка ещё не заполнены — список мест остаётся доступным.</small>
+                            @endif
+                        </div>
                     </div>
-                    <div class="surroundings-foundation__map" aria-label="Карта окружения появится в Release 8">
-                        <span>Provider-neutral map foundation</span>
+
+                    @if ($surroundingCategories->isNotEmpty())
+                        <div class="surroundings-filters" aria-label="Категории мест">
+                            @foreach ($surroundingCategories as $category)
+                                <button type="button" aria-pressed="true" data-surrounding-category="{{ $category->value }}">
+                                    <span class="surroundings-category-icon surroundings-category-icon--{{ $category->value }}" aria-hidden="true">{{ $category->symbol() }}</span>
+                                    {{ $category->label() }}
+                                </button>
+                            @endforeach
+                            <button type="button" class="surroundings-filters__all" data-surrounding-show-all>Показать все</button>
+                        </div>
+                    @endif
+
+                    <div class="surroundings-layout">
+                        <div class="surroundings-map-shell">
+                            <div class="surroundings-map" aria-label="Интерактивная карта окружения" aria-describedby="surroundings-map-help" data-surroundings-map></div>
+                            <p class="surroundings-map__loading" role="status" data-map-loading hidden>Загружаем карту…</p>
+                            <div class="surroundings-map__fallback" role="status" data-map-fallback>
+                                <strong>Карта дополняет список</strong>
+                                <p data-map-fallback-message>Интерактивная карта загрузится только при настроенном публичном ключе Яндекс Карт.</p>
+                                <button type="button" data-map-retry hidden>Повторить</button>
+                            </div>
+                            <div class="surroundings-map-controls" aria-label="Управление картой">
+                                <button type="button" aria-label="Увеличить масштаб" data-map-zoom-in>+</button>
+                                <button type="button" aria-label="Уменьшить масштаб" data-map-zoom-out>−</button>
+                                <button type="button" data-map-fit>Показать все</button>
+                                @if ($settlementPoint)<button type="button" data-map-settlement>К посёлку</button>@endif
+                            </div>
+                            <p class="surroundings-map__help" id="surroundings-map-help">На телефоне карта масштабируется двумя пальцами; страницу можно прокручивать обычным жестом.</p>
+                        </div>
+
+                        <aside class="surroundings-sidebar" aria-label="Места рядом">
+                            <ul class="surroundings-list" data-surroundings-list>
+                                @forelse ($surroundings as $place)
+                                    @php $placeData = $surroundingPayload->firstWhere('slug', $place->slug); @endphp
+                                    <li
+                                        @class(['surroundings-list__item', 'is-selected' => $initialPlace === $place->slug])
+                                        data-surrounding-item
+                                        data-place-slug="{{ $place->slug }}"
+                                        data-place-category="{{ $place->category->value }}"
+                                    >
+                                        <a
+                                            href="{{ $stateUrl(['view' => 'surroundings', 'place' => $place->slug]) }}#surroundings-place-{{ $place->slug }}"
+                                            aria-pressed="{{ $initialPlace === $place->slug ? 'true' : 'false' }}"
+                                            data-surrounding-trigger
+                                            data-place-slug="{{ $place->slug }}"
+                                            data-place-category="{{ $place->category->value }}"
+                                        >
+                                            <span class="surroundings-category-icon surroundings-category-icon--{{ $place->category->value }}" aria-hidden="true">{{ $place->category->symbol() }}</span>
+                                            <span><small>{{ $place->category->label() }}</small><strong>{{ $place->name }}</strong>@if ($placeData['distance_label'])<em>{{ $placeData['distance_label'] }}</em>@endif</span>
+                                        </a>
+                                        @if ($placeData['external_url'])
+                                            <a class="surroundings-list__route" href="{{ $placeData['external_url'] }}" target="_blank" rel="noopener noreferrer">Маршрут<span class="sr-only"> к месту {{ $place->name }}</span></a>
+                                        @endif
+                                    </li>
+                                @empty
+                                    <li class="genplan-empty-copy">Активные места окружения пока не опубликованы.</li>
+                                @endforelse
+                            </ul>
+                            <div class="surroundings-empty" data-surroundings-empty hidden>
+                                <p>В выбранных категориях мест нет.</p>
+                                <button type="button" data-surrounding-show-all>Показать все категории</button>
+                            </div>
+
+                            @foreach ($surroundings as $place)
+                                @php $placeData = $surroundingPayload->firstWhere('slug', $place->slug); @endphp
+                                <article
+                                    class="surroundings-card"
+                                    id="surroundings-place-{{ $place->slug }}"
+                                    data-surrounding-card="{{ $place->slug }}"
+                                    @if ($initialPlace !== $place->slug) hidden @endif
+                                >
+                                    <button type="button" class="genplan-card-close" aria-label="Закрыть карточку {{ $place->name }}" data-surrounding-close>×</button>
+                                    @if ($placeData['image_url'])
+                                        <img src="{{ $placeData['image_url'] }}" alt="" loading="lazy">
+                                    @endif
+                                    <span class="genplan-point-category">{{ $place->category->label() }}</span>
+                                    <h3>{{ $place->name }}</h3>
+                                    @if ($place->description)<p>{{ $place->description }}</p>@endif
+                                    @if ($placeData['distance_label'])<p class="surroundings-card__distance">{{ $placeData['distance_label'] }}</p>@endif
+                                    @if ($placeData['external_url'])
+                                        <a class="button button--primary" href="{{ $placeData['external_url'] }}" target="_blank" rel="noopener noreferrer">Открыть маршрут</a>
+                                    @endif
+                                </article>
+                            @endforeach
+                        </aside>
                     </div>
-                    <ul class="surroundings-list">
-                        @forelse ($surroundings as $place)
-                            <li><span>{{ $place->category->label() }}</span><strong>{{ $place->name }}</strong></li>
-                        @empty
-                            <li class="genplan-empty-copy">Активные места окружения пока не опубликованы.</li>
-                        @endforelse
-                    </ul>
-                </div>
+                </section>
             </div>
+            <script type="application/json" data-surroundings-data>@json($surroundingPayload)</script>
+            <script type="application/json" data-surroundings-config>@json($mapConfig)</script>
+            <script type="application/json" data-settlement-data>@json($settlementPoint?->numeric())</script>
         </div>
     </section>
 @endsection

@@ -781,11 +781,19 @@ based, а не `Model::toArray()` без контроля.
 
 ## Release 8 --- Surroundings
 
--   карта;
--   категории;
--   POI;
--   mobile bottom sheet;
--   управление из Filament.
+-   lazy Yandex Maps JavaScript API v3 через изолированный adapter;
+-   provider-neutral POI с controlled категориями и точными geographic decimal coordinates;
+-   settlement marker, Place markers, category filters и synchronized list/card selection;
+-   progressive SSR list, distance «по прямой», route links и честные fallback states;
+-   URL `view=surroundings&place={public-slug}`, History API и взаимное исключение с Genplan selection;
+-   responsive desktop sidebar и mobile non-modal bottom sheet;
+-   управление Place и координатами посёлка через существующие Filament resources/Settings.
+
+**Результат:** реализовано 2026-08-17. Домен/API/SSR/адаптер,
+админ-валидация, deep links, failure/retry и responsive states закрыты.
+Реальная загрузка Yandex tiles/attribution ожидает production browser key с
+HTTP Referer restriction и остаётся обязательным pre-production smoke-test.
+Booking/payment/account и задачи Release 9 в Release 8 не добавлялись.
 
 ## Release 9 --- QA / SEO / production
 

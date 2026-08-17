@@ -4,19 +4,22 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class SurroundingPlaceResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'slug' => $this->slug,
             'name' => $this->name,
             'category' => $this->category->value,
             'category_label' => $this->category->label(),
-            'coordinates' => ['latitude' => (float) $this->latitude, 'longitude' => (float) $this->longitude],
+            'category_symbol' => $this->category->symbol(),
+            'coordinates' => $this->geographicPoint()?->numeric(),
             'description' => $this->description,
-            'external_url' => $this->external_url,
+            'image_url' => $this->safeImagePath() ? Storage::disk('public')->url($this->safeImagePath()) : null,
+            'external_url' => $this->safeExternalUrl(),
         ];
     }
 }

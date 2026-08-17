@@ -60,6 +60,11 @@ class Genplan extends Model
         return $this->hasMany(InfrastructurePoint::class);
     }
 
+    public function surroundingPlaces(): HasMany
+    {
+        return $this->hasMany(SurroundingPlace::class);
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);

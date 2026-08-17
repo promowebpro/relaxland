@@ -7,6 +7,7 @@ export const stateFromUrl = (url = new URL(window.location.href)) => ({
     selectedQuarter: slug(url.searchParams.get('quarter')),
     selectedInfrastructure: slug(url.searchParams.get('point')),
     selectedPlot: slug(url.searchParams.get('plot')),
+    selectedSurroundingPlace: slug(url.searchParams.get('place')),
     plotFilters: {
         status: value(url, 'status'),
         areaMin: value(url, 'area_min'),
@@ -21,14 +22,18 @@ export const stateFromUrl = (url = new URL(window.location.href)) => ({
     plotsOpen: Boolean(url.searchParams.get('quarter')),
     loading: false,
     error: null,
+    mapLoading: false,
+    mapReady: false,
+    mapError: null,
+    providerStatus: 'idle',
 });
 
 export const writeStateUrl = (state, { replace = false } = {}) => {
-    const url = new URL(window.location.href);
-    ['view', 'mode', 'quarter', 'point', 'plot', 'status', 'area_min', 'area_max', 'price_min', 'price_max', 'sort'].forEach((key) => url.searchParams.delete(key));
+    const url = new URL(window.location.pathname, window.location.origin);
 
     if (state.activeTab === 'surroundings') {
         url.searchParams.set('view', 'surroundings');
+        if (state.selectedSurroundingPlace) url.searchParams.set('place', state.selectedSurroundingPlace);
     } else {
         url.searchParams.set('mode', state.mode);
         if (state.selectedQuarter) url.searchParams.set('quarter', state.selectedQuarter);
