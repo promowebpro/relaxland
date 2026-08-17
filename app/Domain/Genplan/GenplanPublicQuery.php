@@ -77,19 +77,28 @@ class GenplanPublicQuery
     }
 
     /** @return Collection<int, Plot> */
-    public function plots(Quarter $quarter, GenplanMode $mode): Collection
+    public function plots(Quarter $quarter, GenplanMode $mode, ?PlotFilters $filters = null): Collection
     {
-        return Plot::query()
+        $query = Plot::query()
             ->select([
                 'id', 'quarter_id', 'number', 'slug', 'area', 'price', 'price_per_sotka',
                 'status', 'description', 'image', 'is_visible',
             ])
             ->whereBelongsTo($quarter)
             ->publiclyVisible()
-            ->with(['geometries' => fn ($query) => $query->where('mode', $mode->value)])
-            ->orderBy('number')
-            ->orderBy('id')
-            ->get();
+            ->with(['geometries' => fn ($query) => $query->where('mode', $mode->value)]);
+
+        return ($filters ?? new PlotFilters)->apply($query)->get();
+    }
+
+    public function plot(Quarter $quarter, string $slug): ?Plot
+    {
+        return Plot::query()
+            ->select(['id', 'quarter_id', 'number', 'slug', 'status', 'is_visible'])
+            ->whereBelongsTo($quarter)
+            ->where('slug', $slug)
+            ->publiclyVisible()
+            ->first();
     }
 
     /** @return Collection<int, InfrastructurePoint> */

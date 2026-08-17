@@ -104,7 +104,8 @@ class PublicGenplanTest extends TestCase
         $this->getJson(route('api.genplan.quarters.plots', [$quarter->slug, 'mode' => '2d']))
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.id', $visiblePlot->id)
+            ->assertJsonPath('data.0.slug', $visiblePlot->slug)
+            ->assertJsonMissingPath('data.0.id')
             ->assertJsonPath('data.0.geometry.mode', '2d')
             ->assertJsonMissingPath('data.0.attributes');
 

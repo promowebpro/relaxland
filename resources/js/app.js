@@ -102,6 +102,8 @@ if (leadModal) {
     const sourceInput = leadModal.querySelector('[data-lead-source]');
     const formTypeInput = leadModal.querySelector('[data-lead-form-type]');
     const headingInput = leadModal.querySelector('[data-lead-form-heading]');
+    const quarterInput = leadModal.querySelector('[data-lead-quarter]');
+    const plotInput = leadModal.querySelector('[data-lead-plot]');
     const title = leadModal.querySelector('[data-lead-modal-title]');
     const nameInput = leadModal.querySelector('[data-lead-name]');
     let previousFocus = null;
@@ -129,6 +131,8 @@ if (leadModal) {
             const heading = trigger.dataset.leadHeading || 'Давайте знакомиться';
             title.textContent = heading;
             headingInput.value = heading;
+            quarterInput.value = trigger.dataset.leadQuarter || '';
+            plotInput.value = trigger.dataset.leadPlot || '';
         }
 
         nameInput.required = ['visit', 'consultation'].includes(formTypeInput.value);
@@ -141,15 +145,18 @@ if (leadModal) {
         });
     };
 
-    document.querySelectorAll('[data-lead-modal-trigger]').forEach((trigger) => {
-        trigger.addEventListener('click', (event) => {
-            event.preventDefault();
-            openModal(trigger);
-        });
+    document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-lead-modal-trigger]');
+        if (!trigger) return;
+        event.preventDefault();
+        openModal(trigger);
     });
 
     leadModal.querySelectorAll('[data-lead-modal-close]').forEach((control) => {
-        control.addEventListener('click', closeModal);
+        control.addEventListener('click', (event) => {
+            event.preventDefault();
+            closeModal();
+        });
     });
 
     document.addEventListener('keydown', (event) => {

@@ -2,11 +2,16 @@
 
 namespace App\Domain\Leads;
 
+use App\Domain\Genplan\GenplanMode;
+use App\Domain\Genplan\GenplanPublicQuery;
 use Illuminate\Http\Request;
 
 class CreateLead
 {
-    public function __construct(private readonly LeadConsentDocument $consentDocument) {}
+    public function __construct(
+        private readonly LeadConsentDocument $consentDocument,
+        private readonly GenplanPublicQuery $genplanQuery,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data
@@ -22,7 +27,7 @@ class CreateLead
             'name' => $data['name'] ?? null,
             'phone' => $data['phone'],
             'email' => $data['email'] ?? null,
-            'message' => $data['message'] ?? null,
+            'message' => $this->messageWithPlotContext($data),
             'source' => $data['source'],
             'form_type' => $data['form_type'],
             'page_url' => $data['page_url'] ?? null,
@@ -32,5 +37,29 @@ class CreateLead
             'privacy_document_id' => $document?->getKey(),
             'privacy_document_version' => $document?->version,
         ]);
+    }
+
+    /** @param array<string, mixed> $data */
+    private function messageWithPlotContext(array $data): ?string
+    {
+        $message = $data['message'] ?? null;
+        $quarterSlug = $data['quarter'] ?? null;
+        $plotSlug = $data['plot'] ?? null;
+
+        if (! is_string($quarterSlug) || ! is_string($plotSlug)) {
+            return $message;
+        }
+
+        $quarter = $this->genplanQuery->quarter($quarterSlug, GenplanMode::default());
+        $plot = $quarter ? $this->genplanQuery->plot($quarter, $plotSlug) : null;
+        $genplan = $this->genplanQuery->current();
+
+        if (! $genplan || ! $quarter || ! $plot) {
+            return $message;
+        }
+
+        $context = "Генплан: {$genplan->name}; квартал: {$quarter->name} ({$quarter->slug}); участок №{$plot->number} ({$plot->slug}).";
+
+        return filled($message) ? $context."\n".$message : $context;
     }
 }

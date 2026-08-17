@@ -766,9 +766,18 @@ based, а не `Model::toArray()` без контроля.
 
 ## Release 7 --- Plots
 
-После получения/утверждения дизайна: - детализация квартала; - полигоны
-участков; - статусы; - карточка участка; - фильтры при необходимости; -
-заявки по конкретному участку.
+-   детализация выбранного квартала без глобальной загрузки участков;
+-   mode-specific polygon/marker участков без cross-mode fallback;
+-   публичные статусы available/reserved/sold;
+-   карточка участка с controlled полями и exact decimal price labels;
+-   status/area/price filters и deterministic sort;
+-   URL state `quarter + plot`, progressive SSR и History API;
+-   заявка по доступному участку через существующий Leads workflow.
+
+**Результат:** реализовано 2026-08-17. Участки загружаются только для
+выбранного квартала и режима, hidden/invisible/internal данные не
+публикуются, а участок без geometry остаётся в текстовом списке без
+ложной подсветки. Booking/payment и карта окружения не входят в Release 7.
 
 ## Release 8 --- Surroundings
 

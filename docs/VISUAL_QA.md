@@ -133,7 +133,7 @@ Full hover/click choreography, animations, history/deep links, zoom/pan и по�
 - Сам contact sheet не используется как production background. До наполнения Genplan через Filament публичная страница закономерно показывает controlled empty state.
 - Отдельные утверждённые production 2D/3D/mobile background assets и реальные polygons/markers ещё должны быть переданы и внесены редактором.
 - Map provider для Surroundings не выбран; полноценная карта относится к Release 8.
-- Public Plot UI остаётся **N/A / Release 7**; полноценная карта окружения — **N/A / Release 8**.
+- Для исторического scope Release 5 Public Plot UI был **N/A / Release 7**; он закрыт отдельной матрицей ниже. Полноценная карта окружения остаётся **N/A / Release 8**.
 
 # Release 6 — Genplan Interactions Visual QA
 
@@ -153,3 +153,26 @@ Full hover/click choreography, animations, history/deep links, zoom/pan и по�
 Дополнительно проверены: 320 px; default без selection; SSR deep links для Quarter/Infrastructure; mutual exclusion; очистка mode-incompatible selection; list/polygon hover/focus synchronization; Enter/Space; Escape и возврат фокуса; close control; consultation Lead source/type; URL query; Back/Forward; Genplan/Surroundings tabs; отсутствие iframe/provider; desktop fallback при неподтверждённом mobile asset; controlled mobile variant; browser warning/error log.
 
 Plots не запрашиваются и в markup Release 6 не передаются. QA fixture после проверки удаляется; production content и изображения через эту проверку не подменяются.
+
+# Release 7 — Public Plot Selection Visual QA
+
+Дата проверки: 2026-08-17.
+
+Контактный лист `docs/design/genplan.png` определяет shell, типографику, цвета и Quarter states, но не содержит финального Plot filter/card экрана. Поэтому Release 7 продолжает утверждённый визуальный язык контролами существующей системы: белые cards, тёмные pill actions, pale-blue detail panel, системный serif heading. Новая декоративная система, карта provider, booking или payment UI не добавлялись.
+
+Проверочный локальный fixture содержит два Quarter, шесть Plot со статусами `available/reserved/sold`, намеренно разные 2D/3D polygons и один Plot без 2D geometry. Fixture нужен только для локального preview/QA; production data и новая migration им не создаются.
+
+| Release 7 / ширина | 360 | 390 | 768 | 1024 | 1280 | 1440 |
+| --- | --- | --- | --- | --- | --- | --- |
+| No horizontal overflow | PASS | PASS | PASS | PASS | PASS | PASS |
+| Plot list + filters | 1 col | 1 col | 2 col | 2 col | 2 col | 2 col |
+| Plot card composition | Bottom sheet | Bottom sheet | Sidebar | Sidebar | Sidebar | Sidebar |
+| Plot pointer/keyboard target | PASS | PASS | PASS | PASS | PASS | PASS |
+| Text status + visible focus | PASS | PASS | PASS | PASS | PASS | PASS |
+| Distinct 2D/3D geometry | PASS | PASS | PASS | PASS | PASS | PASS |
+
+Проверены visible states: default без Plot payload; Quarter CTA «Выбрать участок»; SSR Quarter list; direct Plot URL; available card с inquiry CTA; reserved/sold card без CTA; status/area/price filters; default/price/area sort; controlled invalid range; empty results; loading; реальная network error при остановленном local server и успешный retry после запуска; быстрый 3D→2D conflict с итоговым применением только текущей geometry; text-only Plot без geometry и отсутствие cross-mode fallback.
+
+Accessibility/interaction QA: list и SVG используют один `selectedPlot`; hover/focus синхронизированы; Enter/Space выбирают Plot; Escape закрывает Plot card до Quarter state; после DOM re-render focus возвращается на новый эквивалентный trigger; mobile targets не меньше 44 px; non-modal bottom sheet не создаёт второй focus trap; открытие существующей Lead modal скрывает mobile Plot sheet визуально и передаёт Quarter/Plot context в scoped hidden inputs.
+
+URL/History QA: `quarter`, `plot`, filters и sort синхронизируются через History API; невалидная relationship не выбирает Plot; close/Escape удаляют только `plot`; Surroundings/Infrastructure очищают Plot state. Browser console warning/error log пуст, все шесть контрольных ширин без document overflow. Полный map provider остаётся Release 8.

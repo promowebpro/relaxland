@@ -34,6 +34,8 @@
             <input type="hidden" name="form_type" value="{{ old('form_type', \App\Domain\Leads\LeadFormType::Generic->value) }}" data-lead-form-type>
             <input type="hidden" name="form_heading" value="{{ old('form_heading') }}" data-lead-form-heading>
             <input type="hidden" name="page_url" value="{{ old('page_url', url()->current()) }}">
+            <input type="hidden" name="quarter" value="{{ old('quarter') }}" data-lead-quarter>
+            <input type="hidden" name="plot" value="{{ old('plot') }}" data-lead-plot>
 
             <div class="lead-form__grid">
                 <label class="form-field">

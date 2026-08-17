@@ -11,6 +11,7 @@ final readonly class GenplanPageState
         public GenplanMode $mode,
         public ?Quarter $selectedQuarter,
         public ?InfrastructurePoint $selectedInfrastructure,
+        public ?Plot $selectedPlot,
         public bool $incomplete,
     ) {}
 
@@ -59,7 +60,25 @@ final readonly class GenplanPageState
             mode: $activeMode,
             selectedQuarter: $selectedQuarter,
             selectedInfrastructure: $selectedInfrastructure,
+            selectedPlot: null,
             incomplete: ! $hasGeometry,
+        );
+    }
+
+    /** @param Collection<int, Plot> $plots */
+    public function withSelectedPlot(?string $slug, Collection $plots): self
+    {
+        $selectedPlot = $this->selectedQuarter && $slug
+            ? $plots->first(fn (Plot $plot): bool => $plot->slug === $slug)
+            : null;
+
+        return new self(
+            activeTab: $this->activeTab,
+            mode: $this->mode,
+            selectedQuarter: $this->selectedQuarter,
+            selectedInfrastructure: $this->selectedInfrastructure,
+            selectedPlot: $selectedPlot,
+            incomplete: $this->incomplete,
         );
     }
 

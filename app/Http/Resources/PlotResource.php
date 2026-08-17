@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Domain\Genplan\PlotPresentation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -13,13 +14,17 @@ class PlotResource extends JsonResource
         $geometry = $this->geometries->first();
 
         return [
-            'id' => $this->id,
             'number' => $this->number,
             'slug' => $this->slug,
             'area' => $this->area,
+            'area_label' => PlotPresentation::area($this->area),
             'price' => $this->price,
+            'price_label' => PlotPresentation::money($this->price),
             'price_per_sotka' => $this->price_per_sotka,
+            'price_per_sotka_label' => PlotPresentation::moneyPerSotka($this->price_per_sotka),
             'status' => $this->status->value,
+            'status_label' => $this->status->label(),
+            'can_inquire' => $this->status->canInquire(),
             'geometry' => $geometry ? [
                 'mode' => $geometry->mode->value,
                 'polygon' => $geometry->polygon_data,

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Domain\Genplan\GenplanMode;
 use App\Domain\Genplan\GenplanPublicQuery;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PlotListRequest;
 use App\Http\Resources\GenplanOverviewResource;
 use App\Http\Resources\InfrastructurePointResource;
 use App\Http\Resources\PlotResource;
@@ -35,14 +36,14 @@ class GenplanApiController extends Controller
         return new QuarterResource($record);
     }
 
-    public function plots(string $quarter, Request $request, GenplanPublicQuery $query): AnonymousResourceCollection
+    public function plots(string $quarter, PlotListRequest $request, GenplanPublicQuery $query): AnonymousResourceCollection
     {
-        $mode = $this->mode($request);
+        $mode = $request->mode();
         $record = $query->quarter($quarter, $mode);
 
         abort_if(! $record, 404);
 
-        return PlotResource::collection($query->plots($record, $mode));
+        return PlotResource::collection($query->plots($record, $mode, $request->filters()));
     }
 
     public function infrastructure(Request $request, GenplanPublicQuery $query): AnonymousResourceCollection

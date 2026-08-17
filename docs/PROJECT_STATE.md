@@ -2,9 +2,9 @@
 
 ## Current Release
 
-Release 6 — Genplan Interactions: **IMPLEMENTED**.
+Release 7 — Public Plot Selection: **IMPLEMENTED**.
 
-SSR `/genplan` и progressive JavaScript реализуют доступный выбор кварталов и инфраструктуры, независимые 2D/3D layers, карточки, URL deep links и History API без загрузки участков. Public Plot UI (Release 7) и полноценная Surroundings map (Release 8) не начинались.
+SSR `/genplan` и progressive JavaScript реализуют доступный выбор участков внутри квартала, controlled filters/sort, mode-specific Plot geometry, URL deep links, History API, on-demand API loading и безопасный переход в существующую consultation Lead form. Полноценная Surroundings map (Release 8) не начиналась.
 
 ## Completed Releases
 
@@ -122,6 +122,20 @@ SSR `/genplan` и progressive JavaScript реализуют доступный �
 - Browser QA пройден на 360/390/768/1024/1280/1440 px (дополнительно 320 px); preflight 5A отдельно подтвердил намеренно разные 2D/3D координаты на 390/1280 px.
 - Release 6 regression: 8 tests / 49 assertions; полный suite: 95 tests / 525 assertions.
 
+### Release 7 — Public Plot Selection
+
+- Дата: 2026-08-17.
+- Quarter CTA теперь открывает реальный выбор участка; начальный `/genplan` не запрашивает и не сериализует Plots, а direct Quarter/Plot links остаются содержательными при отключённом JavaScript.
+- Existing Quarter→Plot endpoint расширен controlled query `mode/status/area_min/area_max/price_min/price_max/sort`; hidden/invisible rows, internal IDs и raw `attributes` не выдаются.
+- Клиент загружает только текущий `quarter + mode`, кэширует эту пару, отменяет устаревший fetch через `AbortController` и дополнительно проверяет request version перед применением response.
+- URL contract расширен `plot={plot.slug}` и controlled filters/sort; Quarter/Plot relationship перепроверяется server-side, Back/Escape/close возвращают согласованное квартальное состояние.
+- Plot list, SVG polygon/marker и карточка синхронизированы для pointer/keyboard/focus. Доступны status/area/price filters, deterministic sort, validation, loading/error/retry и empty state.
+- Участок без geometry текущего режима остаётся в текстовом списке и может открываться direct URL, но не получает polygon/marker другого режима. Переключение 2D/3D не использует fallback.
+- Карточка выводит только controlled поля и exact decimal labels. Inquiry CTA доступен только статусу `available`; `reserved`/`sold` остаются информативными без заявки.
+- Lead context передаёт только Quarter/Plot slugs, повторно разрешается через public queries и добавляет в message безопасные названия/номер; browser-supplied price/status не принимаются.
+- Browser QA выполнен на 360/390/768/1024/1280/1440 px; проверены 2D/3D, missing geometry, фильтры, empty/error/retry, request race, keyboard/focus, direct links и Lead modal context.
+- Release 7 regression: 11 tests / 70 assertions; полный suite: 106 tests / 596 assertions.
+
 ## Current Architecture
 
 - Laravel/Blade приложение находится в корне репозитория; документация — в `docs/`.
@@ -204,7 +218,7 @@ Release 1 не добавлял новые permissions. Используются
 - Genplan Foundation — READY.
 - Multi-view Geometry — READY.
 - Genplan Interactions — READY.
-- Plot domain/admin/API foundation — READY; public Plot UI — NOT STARTED (Release 7).
+- Plot domain/admin/API/public selection — READY.
 - Surroundings domain/admin/API foundation — READY; full map — NOT STARTED (Release 8).
 - Full SEO module — NOT STARTED.
 
@@ -219,8 +233,8 @@ Release 1 не добавлял новые permissions. Используются
 - `leads.store`: `POST /leads` — единый endpoint публичных заявок; отдельной публичной страницы/GET API Leads нет.
 - `blog.index`: `GET /blog`.
 - `blog.show`: `GET /blog/{slug}`.
-- `genplan.index`: `GET /genplan` — SSR interactions/empty state; controlled query: `view=surroundings`, `mode=2d|3d`, `quarter={public-slug}`, `point={public-slug}`.
-- `api.genplan.*`: read-only `GET /api/genplan`, Quarter, Quarter plots и Infrastructure принимают controlled `mode=2d|3d` (default `3d`, invalid mode → 422); Surroundings geometry mode не использует.
+- `genplan.index`: `GET /genplan` — SSR interactions/empty state; controlled query: `view=surroundings`, `mode=2d|3d`, `quarter={public-slug}`, `point={public-slug}`, `plot={quarter-scoped-public-slug}` и Plot filters/sort.
+- `api.genplan.*`: read-only `GET /api/genplan`, Quarter и Infrastructure принимают controlled `mode=2d|3d`; Quarter plots дополнительно принимает controlled status/area/price/sort, не отдаёт internal IDs/attributes; Surroundings geometry mode не использует.
 - Неизвестные URL используют `resources/views/errors/404.blade.php` и сохраняют HTTP 404.
 
 Пункты Blog и Genplan в общем navigation config активированы. Для Plots и других будущих public разделов фиктивные routes/страницы не создавались.
@@ -323,8 +337,8 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Pending Work
 
-- Следующий этап по SPEC — Release 7 Public Plots, только после отдельного задания.
-- Затем остаются Release 8 Surroundings map и Release 9 production QA/SEO.
+- Следующий этап по SPEC — Release 8 Surroundings map, только после отдельного задания.
+- Затем остаётся Release 9 production QA/SEO.
 - До production: MySQL 8+ migration check, реальные settings/legal/blog/Genplan data, 2D/3D/mobile plan assets, exact display-font и standalone 404 mascot при их передаче.
 
 ## Last Verification
@@ -333,7 +347,7 @@ Release 1 не добавлял новые permissions. Используются
 - `composer audit --locked` — PASS, advisories отсутствуют.
 - После временных timeout/502 Packagist повторный строгий `composer audit --locked` завершился успешно; advisories отсутствуют.
 - `npm audit --audit-level=moderate` — PASS, 0 vulnerabilities.
-- `php artisan test` — PASS, 95 tests / 525 assertions после Release 6.
+- `php artisan test` — PASS, 106 tests / 596 assertions после Release 7.
 - `php artisan migrate:fresh --seed` — PASS на SQLite.
 - rollback двух Home/Story migrations, повторное применение и финальный fresh/seed — PASS на SQLite.
 - Release 4 `migrate:fresh --seed`, rollback Leads migration и повторный migrate — PASS на SQLite; `assigned_to`/`privacy_document_id` используют `SET NULL`, обязательные индексы присутствуют.
@@ -353,6 +367,7 @@ Release 1 не добавлял новые permissions. Используются
 - Browser QA Release 5 `/genplan`: 360/390/768/1024/1280/1440, zero image/SVG alignment delta, zero document overflow/broken images, minimum touch target 44px и empty state после удаления QA fixture.
 - Browser interactions Release 5: 2D/3D background + marker visibility, pointer/keyboard Quarter selection, Genplan/Surroundings tabs, mobile menu Escape/focus — PASS; console warning/error log пуст.
 - Browser QA Release 6: 360/390/768/1024/1280/1440 (дополнительно 320), default/2D/3D, Quarter/Infrastructure cards, close, mode-compatible persistence, missing geometry clear, tabs, Lead modal, direct links и Back/Forward — PASS; overflow и console warnings/errors отсутствуют.
+- Browser QA Release 7: 360/390/768/1024/1280/1440, Plot list/polygon/card, available/reserved/sold, filters/sort/empty, real network failure + retry, rapid 3D→2D race, mode-specific coordinates, missing geometry, direct Plot URL, Escape/focus и safe Lead context — PASS; overflow и console warnings/errors отсутствуют.
 - Release 5A preflight перед Release 6: distinct polygon/label/marker coordinates на 390/1280, coordinated background/layer switch и отсутствие fallback — PASS; найденный пробел Quarter label renderer исправлен.
 - Filament browser QA: группа «Посёлок», пять CRUD listing/create routes и structured Quarter `x/y` Repeater — PASS.
 - В публичных Vite assets нет ссылок на Filament — PASS.
@@ -361,4 +376,4 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Last Updated
 
-2026-08-13 — Release 6 завершён: SSR/public-slug deep links, History API, доступные Quarter/Infrastructure interactions и cards, mode-safe selection, mobile bottom sheet, no-Plot performance boundary, ADR-006 и полная browser/test verification; Release 7 не начинался.
+2026-08-17 — Release 7 завершён: progressive Quarter-scoped Plot loading, filters/sort, mode-safe SVG/list/card interactions, Plot deep links, exact money presentation, safe Lead context, error/race handling, расширение ADR-006 и полная browser/test verification; Release 8 не начинался.

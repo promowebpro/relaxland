@@ -1,27 +1,32 @@
 import { normalizeState, stateFromRoot } from './core/state';
 import { createStage } from './core/stage';
 import { stateFromUrl, writeStateUrl } from './core/url-state';
+import { createPlots } from './interactions/plots';
 
 document.querySelectorAll('[data-genplan-foundation]').forEach((root) => {
     const stage = createStage(root);
     let state = normalizeState(stateFromRoot(root), stage);
     let lastSelectionTrigger = null;
+    let plots = null;
 
     const commit = (candidate, options = {}) => {
         state = normalizeState(candidate, stage);
         stage.render(state);
+        plots?.render(state);
         if (options.history !== false) writeStateUrl(state, { replace: options.replace });
     };
+
+    plots = createPlots(root, { getState: () => state, commit });
 
     const selectQuarter = (trigger) => {
         if (trigger.getAttribute('aria-disabled') === 'true') return;
         lastSelectionTrigger = trigger;
-        commit({ ...state, activeTab: 'genplan', selectedQuarter: trigger.dataset.quarterSlug, selectedInfrastructure: null });
+        commit({ ...state, activeTab: 'genplan', selectedQuarter: trigger.dataset.quarterSlug, selectedInfrastructure: null, selectedPlot: null, plotsOpen: false, plotsLoading: false, plotsError: null });
     };
 
     const selectPoint = (trigger) => {
         lastSelectionTrigger = trigger;
-        commit({ ...state, activeTab: 'genplan', selectedQuarter: null, selectedInfrastructure: trigger.dataset.pointSlug });
+        commit({ ...state, activeTab: 'genplan', selectedQuarter: null, selectedInfrastructure: trigger.dataset.pointSlug, selectedPlot: null, plotsOpen: false, plotsLoading: false, plotsError: null });
     };
 
     root.addEventListener('click', (event) => {
@@ -30,13 +35,18 @@ document.querySelectorAll('[data-genplan-foundation]').forEach((root) => {
         const quarter = event.target.closest('[data-quarter-trigger]');
         const point = event.target.closest('[data-point-trigger]');
         const close = event.target.closest('[data-selection-close]');
+        const plotsOpen = event.target.closest('[data-plots-open]');
 
         if (view) {
             event.preventDefault();
-            commit({ ...state, activeTab: view.dataset.genplanView, selectedQuarter: null, selectedInfrastructure: null });
+            commit({ ...state, activeTab: view.dataset.genplanView, selectedQuarter: null, selectedInfrastructure: null, selectedPlot: null, plotsOpen: false });
         } else if (mode) {
             event.preventDefault();
             commit({ ...state, mode: mode.dataset.genplanMode });
+            if (state.plotsOpen) plots.ensure(state);
+        } else if (plotsOpen) {
+            event.preventDefault();
+            plots.ensure({ ...state, selectedQuarter: plotsOpen.dataset.quarterSlug, selectedPlot: null, plotsOpen: true });
         } else if (quarter) {
             event.preventDefault();
             selectQuarter(quarter);
@@ -44,7 +54,7 @@ document.querySelectorAll('[data-genplan-foundation]').forEach((root) => {
             event.preventDefault();
             selectPoint(point);
         } else if (close) {
-            commit({ ...state, selectedQuarter: null, selectedInfrastructure: null });
+            commit({ ...state, selectedQuarter: null, selectedInfrastructure: null, selectedPlot: null, plotsOpen: false });
             lastSelectionTrigger?.focus({ preventScroll: true });
         }
     });
@@ -61,9 +71,15 @@ document.querySelectorAll('[data-genplan-foundation]').forEach((root) => {
             return;
         }
 
+        if (event.key === 'Escape' && state.selectedPlot) {
+            event.preventDefault();
+            commit({ ...state, selectedPlot: null });
+            return;
+        }
+
         if (event.key === 'Escape' && (state.selectedQuarter || state.selectedInfrastructure)) {
             event.preventDefault();
-            commit({ ...state, selectedQuarter: null, selectedInfrastructure: null });
+            commit({ ...state, selectedQuarter: null, selectedInfrastructure: null, selectedPlot: null, plotsOpen: false });
             lastSelectionTrigger?.focus({ preventScroll: true });
             return;
         }
@@ -78,7 +94,7 @@ document.querySelectorAll('[data-genplan-foundation]').forEach((root) => {
         if (next !== index) {
             event.preventDefault();
             stage.tabs[next].focus();
-            commit({ ...state, activeTab: stage.tabs[next].dataset.genplanView, selectedQuarter: null, selectedInfrastructure: null });
+            commit({ ...state, activeTab: stage.tabs[next].dataset.genplanView, selectedQuarter: null, selectedInfrastructure: null, selectedPlot: null, plotsOpen: false });
         }
     });
 
@@ -92,6 +108,10 @@ document.querySelectorAll('[data-genplan-foundation]').forEach((root) => {
     }));
 
     window.addEventListener('resize', () => stage.render(state), { passive: true });
-    window.addEventListener('popstate', () => commit({ ...stateFromUrl(), loading: false, error: null }, { history: false }));
+    window.addEventListener('popstate', () => {
+        commit({ ...stateFromUrl(), loading: false, error: null }, { history: false });
+        if (state.selectedQuarter) plots.ensure(state);
+    });
     stage.render(state);
+    plots.render(state);
 });

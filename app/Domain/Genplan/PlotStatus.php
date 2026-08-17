@@ -18,4 +18,9 @@ enum PlotStatus: string
             self::Hidden => 'Скрыт',
         };
     }
+
+    public function canInquire(): bool
+    {
+        return $this === self::Available;
+    }
 }

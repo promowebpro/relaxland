@@ -34,7 +34,7 @@ class GenplanInteractionsTest extends TestCase
             ->assertSee('data-selection-empty', false)
             ->assertSee('data-quarter-card="quarter-a"  hidden', false)
             ->assertSee('data-point-card="playground"  hidden', false)
-            ->assertDontSee('plots', false);
+            ->assertDontSee('data-plot-item', false);
     }
 
     public function test_direct_quarter_link_is_server_rendered_and_uses_public_slug(): void
@@ -46,8 +46,8 @@ class GenplanInteractionsTest extends TestCase
             ->assertSee('data-initial-quarter="quarter-a"', false)
             ->assertSee('aria-pressed="true"', false)
             ->assertSee('data-quarter-card="quarter-a"', false)
-            ->assertSee('Получить консультацию')
-            ->assertSee('data-lead-form-type="consultation"', false);
+            ->assertSee('Выбрать участок')
+            ->assertSee('data-plots-panel', false);
     }
 
     public function test_direct_point_link_is_server_rendered_and_mutually_exclusive(): void

@@ -2945,6 +2945,197 @@ picture.home-developer__media img,
 
 .genplan-status--limited::before { background: #ce9434; }
 .genplan-status--sold_out::before { background: #7b8083; }
+.genplan-status--reserved::before { background: #ce9434; }
+.genplan-status--sold::before { background: #7b8083; }
+
+.has-open-plots .genplan-quarter {
+    fill-opacity: 0.18;
+    stroke-opacity: 0.45;
+}
+
+.genplan-plot {
+    fill: rgba(255, 255, 255, 0.38);
+    stroke: #fff;
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+    cursor: pointer;
+}
+
+.genplan-plot--reserved { fill: rgba(242, 208, 127, 0.62); }
+.genplan-plot--sold { fill: rgba(123, 128, 131, 0.66); }
+.genplan-plot:hover,
+.genplan-plot:focus,
+.genplan-plot.is-hovered,
+.genplan-plot.is-selected {
+    fill: rgba(220, 233, 238, 0.85);
+    stroke: var(--color-dark);
+    stroke-width: 4;
+    outline: none;
+}
+
+.genplan-plot-marker {
+    fill: white;
+    stroke: var(--color-dark);
+    stroke-width: 3;
+    vector-effect: non-scaling-stroke;
+    cursor: pointer;
+}
+
+.genplan-plot-marker--reserved { fill: #f2d07f; }
+.genplan-plot-marker--sold { fill: #7b8083; }
+.genplan-plot-marker:hover,
+.genplan-plot-marker:focus,
+.genplan-plot-marker.is-hovered,
+.genplan-plot-marker.is-selected {
+    stroke: white;
+    stroke-width: 7;
+    outline: none;
+}
+
+.genplan-plots {
+    display: grid;
+    min-width: 0;
+    gap: 1rem;
+}
+
+.genplan-plots[hidden],
+.genplan-plot-card[hidden] { display: none; }
+
+.genplan-plots__header {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.genplan-plots__header h2 {
+    margin: 0.2rem 0 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 3vw, 2.7rem);
+    font-weight: 400;
+    line-height: 1;
+}
+
+.genplan-plots__back {
+    width: fit-content;
+    min-height: 2.75rem;
+    border: 0;
+    background: transparent;
+    color: var(--color-ink);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.75rem;
+    text-decoration: underline;
+    text-underline-offset: 0.25rem;
+}
+
+.genplan-plot-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--site-radius);
+    padding: 0.85rem;
+}
+
+.genplan-plot-filters label {
+    display: grid;
+    min-width: 0;
+    gap: 0.3rem;
+    color: var(--color-ink-soft);
+    font-size: 0.65rem;
+}
+
+.genplan-plot-filters input,
+.genplan-plot-filters select {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.75rem;
+    border: 1px solid var(--color-line);
+    border-radius: 0.35rem;
+    background: white;
+    padding: 0.5rem;
+    color: var(--color-ink);
+    font: inherit;
+}
+
+.genplan-plot-filters input:focus-visible,
+.genplan-plot-filters select:focus-visible,
+.genplan-plots button:focus-visible,
+.genplan-plot-item:focus-visible {
+    outline: 3px solid var(--color-blue);
+    outline-offset: 2px;
+}
+
+.genplan-plot-filters__error,
+.genplan-plot-filters__actions { grid-column: 1 / -1; }
+.genplan-plot-filters__error { margin: 0; color: #9f332d; font-size: 0.72rem; }
+.genplan-plot-filters__actions { display: flex; gap: 0.5rem; }
+.genplan-plot-filters__actions button,
+.genplan-plots__state button {
+    min-height: 2.75rem;
+    border: 1px solid var(--color-dark);
+    border-radius: 999px;
+    background: white;
+    padding: 0.5rem 0.85rem;
+    color: var(--color-dark);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.7rem;
+}
+.genplan-plot-filters__actions button:first-child { background: var(--color-dark); color: white; }
+
+.genplan-plots__state {
+    margin: 0;
+    border-radius: var(--site-radius);
+    background: var(--color-mist);
+    padding: 1rem;
+    color: var(--color-ink-soft);
+    font-size: 0.76rem;
+}
+.genplan-plots__state[hidden] { display: none; }
+.genplan-plots__state p { margin: 0 0 0.75rem; }
+.genplan-plots__state--error { background: #f8e7e5; color: #7e2924; }
+
+.genplan-plot-list {
+    display: grid;
+    gap: 0.5rem;
+    max-height: 25rem;
+    overflow-y: auto;
+}
+
+.genplan-plot-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 4rem;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--color-line);
+    border-radius: 0.6rem;
+    background: white;
+    padding: 0.7rem;
+    color: var(--color-ink);
+    text-decoration: none;
+}
+
+.genplan-plot-item.is-selected,
+.genplan-plot-item.is-hovered { border-color: var(--color-dark); box-shadow: inset 0 0 0 1px var(--color-dark); }
+.genplan-plot-item > span { display: grid; gap: 0.2rem; }
+.genplan-plot-item > span:nth-child(2) { text-align: right; }
+.genplan-plot-item small { color: var(--color-ink-soft); font-size: 0.65rem; }
+.genplan-plot-item__geometry { grid-column: 1 / -1; }
+
+.genplan-plot-card {
+    position: relative;
+    border-radius: var(--site-radius);
+    background: var(--color-blue);
+    padding: 1.25rem;
+}
+.genplan-plot-card h3 { margin: 1rem 3rem 0.75rem 0; font-family: var(--font-display); font-size: 2rem; font-weight: 400; }
+.genplan-plot-card dl { display: grid; gap: 0.4rem; margin: 0; }
+.genplan-plot-card dl div { display: flex; justify-content: space-between; gap: 1rem; border-top: 1px solid rgba(48, 56, 61, 0.15); padding-top: 0.4rem; }
+.genplan-plot-card dt { color: var(--color-ink-soft); font-size: 0.68rem; }
+.genplan-plot-card dd { margin: 0; font-size: 0.75rem; font-weight: 600; text-align: right; }
+.genplan-plot-card p { color: var(--color-ink-soft); font-size: 0.75rem; line-height: 1.5; }
+.genplan-plot-card .button { width: 100%; white-space: normal; }
 
 .genplan-empty-state {
     display: grid;
@@ -3047,6 +3238,20 @@ picture.home-developer__media img,
         overflow-y: auto;
         padding: 1.5rem max(1.5rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
     }
+    .genplan-plot-filters { grid-template-columns: 1fr; }
+    .genplan-plot-filters__error,
+    .genplan-plot-filters__actions { grid-column: 1; }
+    .genplan-plot-card {
+        position: fixed;
+        z-index: 30;
+        max-height: min(72vh, 38rem);
+        border-radius: var(--site-radius) var(--site-radius) 0 0;
+        box-shadow: 0 -1rem 3rem rgba(38, 57, 64, 0.18);
+        inset: auto 0 0;
+        overflow-y: auto;
+        padding: 1.5rem max(1.5rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
+    }
+    .has-open-modal .genplan-plot-card { display: none; }
     .surroundings-foundation__map { min-height: 24rem; }
     .surroundings-list { grid-template-columns: 1fr; }
 }

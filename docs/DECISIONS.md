@@ -235,5 +235,15 @@ Quarter, Plot и InfrastructurePoint являются едиными бизне�
 - изменение публичного slug после публикации может сломать сохранённые ссылки и требует redirect strategy;
 - URLs с `quarter` и `point` одновременно канонизируются в одно выбранное состояние;
 - Surroundings очищает selection и не загружает map provider;
-- Release 7 может расширить contract участком отдельным параметром только через новую совместимую decision/migration;
+- Release 7 расширяет contract участком совместимым параметром `plot`; DB migration не нужна, потому что per-Quarter Plot slug и unique constraint уже существовали;
 - URL не является storage: loading/error остаются transient client state.
+
+### Release 7 extension — Plot selection
+
+URL участка использует `plot={plot.slug}` только вместе с валидным `quarter={quarter.slug}`. Plot slug уникален в пределах Quarter, поэтому сервер сначала разрешает публичный Quarter текущего Genplan, затем публичный visible/non-hidden Plot через эту relationship. Внутренний database ID не входит в URL/API. `point`, `view=surroundings` и Plot selection взаимоисключаются.
+
+Controlled Plot query дополнительно поддерживает `status=available|reserved|sold`, `area_min`, `area_max`, `price_min`, `price_max` и `sort=price_asc|area_asc|area_desc`; default sort — natural number + ID tie-break на сервере. Невалидные API параметры получают 422. Публичная SSR-страница fail closed очищает невалидные диапазоны и использует один value object для серверной фильтрации и query serialization.
+
+Начальная страница без Quarter не выполняет Plot query и не сериализует Plot collection. Quarter deep link progressive-rendered: сервер загружает только его Plots и только geometry выбранного режима. После hydration клиент кэширует полный controlled payload по ключу `quarter|mode`, фильтрует/sort локально, отменяет предыдущий fetch через `AbortController` и применяет response только при совпадении request version и текущего ключа.
+
+Plot без geometry текущего режима остаётся доступным в списке и direct-link карточке, но не получает polygon/marker из другого режима. Этот controlled text-only state предпочтительнее ложной подсветки. `available` разрешает inquiry CTA; `reserved` и `sold` публично информативны, но CTA не получают. Lead принимает только slugs, повторно разрешает их server-side и записывает безопасный текстовый context без доверия к browser-supplied price/status.

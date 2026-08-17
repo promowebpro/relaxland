@@ -19,6 +19,8 @@ export const createStage = (root) => {
     const emptyStates = stage ? [...stage.querySelectorAll('[data-genplan-geometry-empty]')] : [];
     const cards = [...root.querySelectorAll('[data-quarter-card], [data-point-card]')];
     const selectionEmpty = root.querySelector('[data-selection-empty]');
+    const selection = root.querySelector('[data-genplan-selection]');
+    const plotsPanel = root.querySelector('[data-plots-panel]');
     const image = stage?.querySelector('[data-genplan-image]');
 
     const hasQuarter = (slug, mode) => quarterTriggers.some((trigger) => trigger.dataset.quarterSlug === slug
@@ -29,6 +31,9 @@ export const createStage = (root) => {
     const render = (state) => {
         root.dataset.loading = state.loading ? 'true' : 'false';
         root.dataset.incomplete = state.incomplete ? 'true' : 'false';
+        root.classList.toggle('has-open-plots', state.plotsOpen);
+        selection?.toggleAttribute('hidden', state.plotsOpen);
+        plotsPanel?.toggleAttribute('hidden', !state.plotsOpen);
 
         tabs.forEach((tab) => {
             const active = tab.dataset.genplanView === state.activeTab;
@@ -61,7 +66,7 @@ export const createStage = (root) => {
             trigger.setAttribute('aria-pressed', selected ? 'true' : 'false');
         });
         cards.forEach((card) => {
-            const visible = card.dataset.quarterCard === state.selectedQuarter || card.dataset.pointCard === state.selectedInfrastructure;
+            const visible = !state.plotsOpen && (card.dataset.quarterCard === state.selectedQuarter || card.dataset.pointCard === state.selectedInfrastructure);
             card.toggleAttribute('hidden', !visible);
         });
         selectionEmpty?.toggleAttribute('hidden', Boolean(state.selectedQuarter || state.selectedInfrastructure));

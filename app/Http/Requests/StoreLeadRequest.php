@@ -45,6 +45,8 @@ class StoreLeadRequest extends FormRequest
             'form_type' => ['required', new Enum(LeadFormType::class)],
             'form_heading' => ['nullable', 'string', 'max:120'],
             'page_url' => ['nullable', 'string', 'max:2048'],
+            'quarter' => ['nullable', 'string', 'alpha_dash', 'max:255', 'required_with:plot'],
+            'plot' => ['nullable', 'string', 'alpha_dash', 'max:255'],
             'consent' => ['accepted'],
             'website' => [
                 'nullable',
