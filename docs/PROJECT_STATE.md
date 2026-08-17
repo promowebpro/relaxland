@@ -163,8 +163,8 @@ SSR `/genplan` и progressive JavaScript реализуют карту окру�
 
 ## Installed Packages
 
-- PHP: 8.5.9 в проверочном окружении, minimum проекта — 8.3.
-- Laravel Framework: 12.65.0.
+- PHP: 8.5.9 в проверочном окружении; Composer platform и minimum deployment — 8.3.31.
+- Laravel Framework: 12.66.0.
 - Filament: 4.12.6.
 - Spatie Laravel Permission: 8.3.0.
 - Laravel Pint: 1.30.5.

@@ -9,7 +9,7 @@ Laravel размещён в корне репозитория. Документ�
 ## Стек
 
 - PHP 8.3+;
-- Laravel 12.65.0;
+- Laravel 12.66.0;
 - Filament 4.12.6, панель `/admin`;
 - Spatie Laravel Permission 8.3.0;
 - MySQL 8+ для целевого окружения;
