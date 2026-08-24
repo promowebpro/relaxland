@@ -1,15 +1,17 @@
 # Release 0 — Foundation
 
+> **Исторический документ Release 0.** Этот файл фиксирует scope и контракты Foundation на момент исходного baseline `974b360afc459e3760486835fcf71ec9a614426c`; он не описывает текущее состояние всего проекта. Актуальные модули, версии и текущая RBAC-матрица находятся в [`PROJECT_STATE.md`](PROJECT_STATE.md). Permissions последующих релизов не следует добавлять в историческую таблицу ниже.
+
 ## Назначение
 
-Foundation предоставляет базовый Laravel-проект, административную панель, пользователей, роли, permissions, безопасное создание первого администратора и расширяемое хранилище глобальных настроек. Функциональность последующих релизов намеренно не реализована.
+На этапе Release 0 Foundation предоставлял базовый Laravel-проект, административную панель, пользователей, роли, permissions, безопасное создание первого администратора и расширяемое хранилище глобальных настроек. Функциональность последующих релизов на тот момент намеренно не была реализована.
 
 Laravel размещён в корне репозитория. Документация находится в `docs/`; отдельная вложенная папка приложения не используется.
 
 ## Стек
 
 - PHP 8.3+;
-- Laravel 12.66.0;
+- Laravel 12.65.0;
 - Filament 4.12.6, панель `/admin`;
 - Spatie Laravel Permission 8.3.0;
 - MySQL 8+ для целевого окружения;
@@ -41,14 +43,14 @@ php artisan migrate --seed
 
 ## Роли
 
-| Роль | Разрешения Foundation |
+| Роль | Разрешения в scope Release 0 |
 |---|---|
-| `super-admin` | Все существующие permissions |
+| `super-admin` | Все permissions Release 0: `admin.access`, `users.*`, `roles.*`, `content.*`, `settings.view`, `settings.manage` |
 | `content-manager` | `admin.access`, `content.*`, `settings.view` |
-| `sales-manager` | `admin.access`, `leads.view`, `leads.update`, `genplan.view`, `genplan.manage`, `plots.view`, `plots.manage` |
-| `viewer` | `admin.access` и только view-разрешения контента, заявок, генплана, участков и настроек |
+| `sales-manager` | `admin.access` |
+| `viewer` | `admin.access`, `content.view`, `settings.view` |
 
-Полный реестр permissions хранится в `App\Domain\Users\Enums\PermissionName`, а матрица — в `App\Domain\Users\RolePermissionRegistrar`.
+Baseline-коммит объединяет состояние проекта через Release 2 и уже содержит зарезервированные enum/matrix entries для будущих Leads, Genplan и Plots. Эти permissions не являются функциональностью Release 0 и намеренно исключены из исторической таблицы. Текущий полный реестр хранится в `App\Domain\Users\Enums\PermissionName`, текущая матрица — в `App\Domain\Users\RolePermissionRegistrar`; их актуальный контракт описан в `PROJECT_STATE.md`.
 
 ## Авторизация
 
@@ -100,4 +102,4 @@ npm run build
 
 ## Ограничения Release 0
 
-Не реализованы публичные страницы, контентные ресурсы, блог, заявки, контакты/SEO UI, генплан, участки, карты и внешние интеграции. Локальная проверка выполнена на SQLite, поскольку MySQL-сервис в текущем окружении отсутствует; перед production-развёртыванием миграции необходимо прогнать на MySQL 8+.
+На момент Release 0 не были реализованы публичные страницы, контентные ресурсы, блог, заявки, контакты/SEO UI, генплан, участки, карты и внешние интеграции. Это историческое ограничение Release 0, а не описание текущего проекта. Локальная проверка Foundation была выполнена на SQLite, поскольку MySQL-сервис в проверочном окружении отсутствовал; актуальный статус MySQL-проверки указан в `PROJECT_STATE.md`.

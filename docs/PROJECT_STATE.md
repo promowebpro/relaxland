@@ -155,6 +155,7 @@ SSR `/genplan` и progressive JavaScript сохраняют рабочее ок�
 ## Current Architecture
 
 - Laravel/Blade приложение находится в корне репозитория; документация — в `docs/`.
+- `docs/FOUNDATION.md` является историческим документом scope Release 0, а не источником текущего статуса; актуальная RBAC-матрица поддерживается в этом `PROJECT_STATE.md` и в `RolePermissionRegistrar`.
 - Публичный frontend использует Blade, Vite, Tailwind 4 и собственный согласованный CSS-слой; SPA отсутствует.
 - Filament остаётся отдельной административной панелью `/admin` и не импортируется публичным Vite bundle.
 - Spatie Permission является единственным источником ролей и permissions.
@@ -211,7 +212,12 @@ Release 1 не добавлял новые permissions. Используются
 - `genplan.view`, `genplan.manage` для Genplan, Quarter, InfrastructurePoint и SurroundingPlace;
 - `plots.view`, `plots.manage` для Plot.
 
-`sales-manager` получает только `admin.access`, `leads.view`, `leads.update`. `viewer` имеет read-only content/settings/genplan/plots permissions, но не получает `leads.view` и не имеет доступа к PII заявок; manage permissions автоматически никому не добавлялись. Super-admin сохраняет Gate-before полный доступ.
+Текущая role matrix:
+
+- `super-admin` — все зарегистрированные permissions и полный Gate-before access с сохранением контекстных Policy-защит;
+- `content-manager` — `admin.access`, `content.view`, `content.create`, `content.update`, `content.delete`, `content.publish`, `settings.view`; Leads permissions автоматически не получает;
+- `sales-manager` — только `admin.access`, `leads.view`, `leads.update`; `genplan.view/manage` и `plots.view/manage` автоматически не получает;
+- `viewer` — `admin.access`, `content.view`, `genplan.view`, `plots.view`, `settings.view`; `leads.view` отсутствует, Lead PII недоступны, write/manage/publish permissions отсутствуют.
 
 Фактическая матрица находится в `RolePermissionRegistrar` и синхронизируется seed-командой.
 
@@ -368,6 +374,7 @@ Release 1 не добавлял новые permissions. Используются
 - После временных timeout/502 Packagist повторный строгий `composer audit --locked` завершился успешно; advisories отсутствуют.
 - `npm audit --audit-level=moderate` — PASS, 0 vulnerabilities.
 - `php artisan test` — PASS, 118 tests / 691 assertions после Release 8.
+- Documentation consistency correction: targeted RBAC regression — PASS, 25 tests / 147 assertions; текущая матрица сверена с registrar, seeder, policies и feature tests.
 - `php artisan migrate:fresh --seed` — PASS на SQLite.
 - rollback двух Home/Story migrations, повторное применение и финальный fresh/seed — PASS на SQLite.
 - Release 4 `migrate:fresh --seed`, rollback Leads migration и повторный migrate — PASS на SQLite; `assigned_to`/`privacy_document_id` используют `SET NULL`, обязательные индексы присутствуют.
