@@ -5,11 +5,7 @@
 @section('content')
     <section class="page-hero page-hero--document">
         <div class="site-container">
-            <x-breadcrumbs :items="[
-                ['label' => 'Главная', 'url' => route('home')],
-                ['label' => 'Конфиденциальность', 'url' => route('legal.index')],
-                ['label' => $document->title],
-            ]" />
+            <x-breadcrumbs :items="$seo->breadcrumbs" />
             <div class="document-heading">
                 <h1>{{ $document->title }}</h1>
                 <div>

@@ -2,9 +2,11 @@
 
 ## Current Release
 
-Release 8 — Surroundings Map: **IMPLEMENTED — MAP PROVIDER DEFERRED**.
+Release 9 — Production Readiness & SEO: **APPLICATION IMPLEMENTED — LAUNCH INFRASTRUCTURE BLOCKED**.
 
-SSR `/genplan` и progressive JavaScript сохраняют рабочее окружение с controlled POI, категориями, stable Place deep links, desktop sidebar/mobile bottom sheet и полным fallback без ключа/SDK. По продуктовому решению от 2026-08-24 подключение реального map provider отложено: существующие Yandex v3 adapter и configuration остаются в коде, но карта не считается production-ready, Release 8A отменён до отдельного решения владельца проекта, тарифы и внешние map services не подключаются. Release 9 не начинался.
+Централизованный SEO contract, environment-aware robots, sitemap, structured data, production headers, безопасные error pages, launch/deployment/backup runbooks и production readiness command реализованы. Browser QA и SQLite migration verification пройдены. Production deployment не выполнялся, индексация по умолчанию закрыта. Главный launch blocker — обязательная проверка на MySQL 8+; domain/DNS/SSL, реальные content/legal data, mail/queue/backup operations и production smoke остаются pending.
+
+Release 8 сохраняет отдельный статус **IMPLEMENTED — MAP PROVIDER DEFERRED**: SSR Surroundings, categories/cards/deep links и fallback работают без SDK; Yandex adapter/configuration не удалены, но карта не production-ready и внешние сервисы не подключались.
 
 ## Completed Releases
 
@@ -152,6 +154,20 @@ SSR `/genplan` и progressive JavaScript сохраняют рабочее ок�
 - Release 8 regression: 12 PHP tests / 93 assertions и 2 Node adapter tests; полный PHP suite: 118 tests / 691 assertions.
 - Продуктовое решение от 2026-08-24 откладывает реального provider: Yandex adapter/configuration не удалены, SSR list/cards/categories/deep links и fallback остаются текущим публичным состоянием, карта не объявляется production-ready.
 
+### Release 9 — Production Readiness & SEO
+
+- Дата: 2026-08-24.
+- Введён единый `Domain/Seo`: fixed-origin canonical из `SEO_PUBLIC_URL`, детерминированные title/description fallbacks, OpenGraph, index/noindex policy, Organization/WebSite/BreadcrumbList/Article JSON-LD и safe Storage image boundary.
+- Home, static pages, Blog root/articles и Genplan overview индексируемы только при явном `SEO_INDEXING_ENABLED=true`; Blog filters/search/sort/pagination/unknown query и все выбранные Genplan states сохраняют deep links, но получают `noindex` и canonical корневой страницы. UTM не попадает в canonical.
+- Добавлены dynamic `/robots.txt` и deterministic `/sitemap.xml`; sitemap использует только public visibility scopes и не содержит legal/thanks/query/admin/API/private records.
+- Global SEO fallbacks добавлены в существующие typed/cached Settings и Filament page; environment indexing switch, keys и raw JSON в админку не вынесены. RBAC не расширялся.
+- Добавлены production headers: `nosniff`, referrer, permissions и frame policy; HSTS только по explicit opt-in на HTTPS. CSP оставлен явным technical debt до точного report-only allowlist.
+- Добавлены standalone safe 500, X-Robots-Tag для technical/error responses и `app:production-check`, который не выводит config values/secrets.
+- `.env.example`, README, ADR-008, SEO contract, launch checklist, production deployment и backup/restore runbooks обновлены. Production deployment и внешние services не выполнялись.
+- SQLite clean migrate/seed и rollback/reapply последней migration пройдены. MySQL `127.0.0.1:3306` недоступен; staging также использует SQLite, поэтому MySQL 8 verification остаётся launch blocker.
+- Browser QA: production build, `APP_DEBUG=false`, explicit canonical origin, 12 representative states и widths 360/390/768/1024/1280/1440; overflow/broken images/console warnings отсутствуют, map SDK requests равны нулю. Raw SSR отдельно подтвердил основной контент без выполнения JavaScript.
+- Release 9 regression: 23 PHP tests / 146 assertions. Полный suite: 141 PHP tests / 837 assertions; Node adapter: 2 tests.
+
 ## Current Architecture
 
 - Laravel/Blade приложение находится в корне репозитория; документация — в `docs/`.
@@ -159,7 +175,7 @@ SSR `/genplan` и progressive JavaScript сохраняют рабочее ок�
 - Публичный frontend использует Blade, Vite, Tailwind 4 и собственный согласованный CSS-слой; SPA отсутствует.
 - Filament остаётся отдельной административной панелью `/admin` и не импортируется публичным Vite bundle.
 - Spatie Permission является единственным источником ролей и permissions.
-- Используемые домены: `Domain/Users`, `Domain/Settings`, `Domain/Content`, `Domain/Blog`, `Domain/Home`, `Domain/Leads`, `Domain/Genplan`.
+- Используемые домены: `Domain/Users`, `Domain/Settings`, `Domain/Content`, `Domain/Blog`, `Domain/Home`, `Domain/Leads`, `Domain/Genplan`, `Domain/Seo`, `Domain/Operations`.
 - Policies обеспечивают серверные проверки; видимость UI не заменяет авторизацию.
 - Целевая БД — MySQL 8+; автоматические тесты и текущая проверка миграций используют SQLite.
 
@@ -242,11 +258,14 @@ Release 1 не добавлял новые permissions. Используются
 - Genplan Interactions — READY.
 - Plot domain/admin/API/public selection — READY.
 - Surroundings domain/admin/API/public fallback — READY; интерактивный map provider — DEFERRED, карта не production-ready.
-- Full SEO module — NOT STARTED.
+- Production SEO module — READY; внешнее открытие индексации — PENDING INFRASTRUCTURE/CONTENT.
+- Production deployment / backup runbooks — READY; фактический rollout/restore drill — NOT PERFORMED.
 
 ## Public Routes
 
 - `home`: `GET /` — настоящая SSR-главная Release 3.
+- `robots`: `GET /robots.txt` — environment-aware robots policy.
+- `sitemap`: `GET /sitemap.xml` — canonical public static pages и published Blog articles.
 - `about`: `GET /about`.
 - `contacts`: `GET /contacts`.
 - `legal.index`: `GET /privacy`.
@@ -263,7 +282,7 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Filament
 
-- `/admin/site-settings` — секционная форма контактов, соцсетей, маршрутов, презентации и footer; чтение и запись разделены permissions.
+- `/admin/site-settings` — секционная форма контактов, соцсетей, маршрутов, презентации, footer и controlled global SEO fallbacks; чтение и запись разделены permissions.
 - `/admin/legal-documents` — CRUD документов с HTML rich editor или PDF, version, type, active/published state.
 - `/admin/blog-categories` — категории, порядок, active state и количество статей.
 - `/admin/blog-posts` — статьи, структурированные blocks, media, publication и SEO.
@@ -341,6 +360,10 @@ Release 1 не добавлял новые permissions. Используются
 - Exact design display-font и standalone mascot 404 остаются ожидаемыми исходниками; текущее поведение описано в `docs/VISUAL_QA.md`.
 - Production 2D/3D/mobile Genplan backgrounds и реальные normalized polygons/markers должны быть переданы и заполнены через Filament; contact sheet не подменяет business data.
 - Публичные Infrastructure slug рассчитаны как долгоживущие ссылки; их ручное изменение после публикации потребует redirect strategy.
+- MySQL 8 verification является Release 9 launch blocker: локальный TCP `127.0.0.1:3306` недоступен, а staging фактически использует SQLite. До PASS production deployment запрещён.
+- Production domain/DNS/SSL, реальные organization/contact/legal/content data, mail transport, queue worker, backup provider/retention и restore drill остаются operational/content pending согласно `docs/LAUNCH_CHECKLIST.md`.
+- CSP не включён декларативно: требуется report-only проектирование точного Filament/Vite allowlist и повторная оценка после отдельного решения о map provider. HSTS включается только после подтверждения HTTPS lifecycle.
+- Реальные Search Console/Rich Results/Core Web Vitals и sitemap submission относятся к post-deploy manual verification; локальная проверка не выдаётся за production metrics.
 - Защищённый Git baseline Release 0–2 создан; `.env`, dependencies, production build и сгенерированные Filament assets исключены из истории.
 
 ## Tests
@@ -359,21 +382,21 @@ Release 1 не добавлял новые permissions. Используются
 - Release 6: SSR/query state, public slugs, invalid/hidden/missing-mode selection, mutual exclusion, no Plot/N+1 boundary, safe cards/API и browser keyboard/History interactions.
 - Release 7: Quarter-scoped Plot loading, controlled filters/sort, mode-specific geometry without fallback, stable Plot deep links, exact decimal presentation, safe Lead context, request race/error recovery и browser keyboard/focus interactions.
 - Release 8: geographic decimal boundaries, Genplan-scoped visibility/slug migration, controlled API/filter/422/query count, SSR/deep links/XSS/fallback/distance, Filament RBAC/validation, lazy SDK contract и provider adapter lifecycle без duplicates.
+- Release 9: centralized metadata fallbacks, fixed-origin canonical, robots/indexability matrix, sitemap visibility/order/query bound, JSON-LD/OG safety, admin Settings RBAC, production headers/error safety и secret-free readiness command.
 - Полный Release 0 regression suite сохранён и проходит.
 
 ## Pending Work
 
-- Следующий этап по SPEC — Release 9 production QA/SEO, только после отдельного задания.
+- Release 9 application scope завершён; production rollout не начинался. Следующий шаг — закрыть `BLOCKER`/pending items из `docs/LAUNCH_CHECKLIST.md`, затем получить отдельное разрешение владельца на deployment и открытие индексации.
 - Release 8A отменён до отдельного решения владельца проекта. Перед production отдельно выбрать платный Yandex Maps либо Leaflet/OpenStreetMap/другой provider и затем выполнить соответствующий provider QA; текущий этап не подключает тарифы или внешние map services.
-- До production: MySQL 8+ migration check, реальные settings/legal/blog/Genplan data, 2D/3D/mobile plan assets, exact display-font и standalone 404 mascot при их передаче.
+- До production: обязательный MySQL 8+ migration check; domain/DNS/SSL; production env/storage/backup/restore/mail/queue/logging; реальные SEO/settings/legal/blog/Genplan data; 2D/3D/mobile plan assets; exact display-font и standalone 404 mascot при их передаче.
 
 ## Last Verification
 
 - `composer validate --strict` — PASS.
-- `composer audit --locked` — PASS, advisories отсутствуют.
-- После временных timeout/502 Packagist повторный строгий `composer audit --locked` завершился успешно; advisories отсутствуют.
-- `npm audit --audit-level=moderate` — PASS, 0 vulnerabilities.
-- `php artisan test` — PASS, 118 tests / 691 assertions после Release 8.
+- `composer audit --locked --ignore-unreachable` — installed lock advisories не найдены; Packagist endpoint был недоступен по timeout, поэтому online audit нужно повторить перед deployment.
+- `npm audit` и production-only `npm audit --omit=dev` — PASS, 0 vulnerabilities.
+- `php artisan test` — PASS, 141 tests / 837 assertions после Release 9.
 - Documentation consistency correction: targeted RBAC regression — PASS, 25 tests / 147 assertions; текущая матрица сверена с registrar, seeder, policies и feature tests.
 - `php artisan migrate:fresh --seed` — PASS на SQLite.
 - rollback двух Home/Story migrations, повторное применение и финальный fresh/seed — PASS на SQLite.
@@ -382,6 +405,7 @@ Release 1 не добавлял новые permissions. Используются
 - Release 5A forward migration legacy→`3d`, отсутствие автоматического `2d`, rollback `3d`→legacy и повторный migrate — PASS в integration test и на отдельной SQLite verification DB.
 - Release 6 public slug migration: forward/backfill/`NOT NULL`/per-Genplan unique, rollback и повторный migrate — PASS на SQLite; `migrate:fresh --seed` также PASS на `:memory:` verification DB.
 - Release 8 SurroundingPlace migration: Genplan backfill, stable slug suffixing, `NOT NULL`, per-Genplan unique, FK/index, rollback — PASS в отдельном SQLite integration test.
+- Release 9 clean `migrate:fresh --seed`, rollback/reapply последней migration и финальный migration status — PASS на отдельной SQLite verification DB; временная БД удалена. MySQL check — BLOCKER/UNAVAILABLE.
 - `vendor/bin/pint` и `vendor/bin/pint --test` — PASS.
 - `npm run test:js` — PASS, 2 adapter lifecycle tests.
 - `npm run build` — PASS, Vite 7.3.6.
@@ -399,6 +423,9 @@ Release 1 не добавлял новые permissions. Используются
 - Browser QA Release 7: 360/390/768/1024/1280/1440, Plot list/polygon/card, available/reserved/sold, filters/sort/empty, real network failure + retry, rapid 3D→2D race, mode-specific coordinates, missing geometry, direct Plot URL, Escape/focus и safe Lead context — PASS; overflow и console warnings/errors отсутствуют.
 - Browser QA Release 8: SSR list/card/filter/deep-link/focus/fallback на 360/390/768/1024/1280/1440 без overflow; invalid query canonicalization, missing image/route, provider failure/retry и repeated tab cycles — PASS. Adapter test double — PASS; real map provider QA — DEFERRED по продуктовому решению, карта не production-ready.
 - Browser QA provider-deferred fallback 2026-08-24 на `https://relaxland.evoline.digital/genplan?view=surroundings` — PASS: `configuration_missing` является controlled state, 6 SSR Place доступны, SDK scripts `0`, retry скрыт, console issues `0`, horizontal overflow отсутствует.
+- Browser QA Release 9: production-like `APP_DEBUG=false`, explicit canonical origin/indexing, 12 public/indexability states и 360/390/768/1024/1280/1440 — PASS; H1/landmarks, canonical/robots/OG/JSON-LD, image alt presence, zero broken images, zero overflow и empty console. Map SDK scripts/requests — `0`.
+- Raw SSR without JavaScript execution подтверждает Home, Blog article, Surroundings content и canonical metadata; 14 internal links проверены, broken links — `0`.
+- Release 9 response-size baseline: Home 35.8 KB HTML; остальные major static/list/detail responses 14.0–21.2 KB на empty/QA fixtures; наполненные Genplan deep links 63.2–73.8 KB. Production Vite bundle: CSS 126.48 KB / 24.67 KB gzip, JS 82.30 KB / 28.15 KB gzip.
 - Release 5A preflight перед Release 6: distinct polygon/label/marker coordinates на 390/1280, coordinated background/layer switch и отсутствие fallback — PASS; найденный пробел Quarter label renderer исправлен.
 - Filament browser QA: группа «Посёлок», пять CRUD listing/create routes и structured Quarter `x/y` Repeater — PASS.
 - В публичных Vite assets нет ссылок на Filament — PASS.
@@ -407,4 +434,4 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Last Updated
 
-2026-08-24 — Release 8 зафиксирован со статусом `IMPLEMENTED — MAP PROVIDER DEFERRED`: provider-neutral POI, geographic contract, scoped migration/API/Filament, SSR list/cards/categories/deep links и fallback сохраняются; Yandex v3 adapter/configuration не удалены, но Release 8A отменён до отдельного решения владельца и карта не считается production-ready. Перед production требуется отдельный выбор между платным Yandex Maps и Leaflet/OpenStreetMap/другим provider; Release 9 не начинался.
+2026-08-24 — Release 9 application scope завершён со статусом `APPLICATION IMPLEMENTED — LAUNCH INFRASTRUCTURE BLOCKED`. SEO/robots/sitemap/structured data/security/error/readiness/runbook contracts реализованы и проверены; production deployment и indexing не выполнялись. MySQL 8 verification остаётся обязательным blocker. Release 8 отдельно сохраняет `IMPLEMENTED — MAP PROVIDER DEFERRED` без удаления adapter/fallback кода.

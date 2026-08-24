@@ -215,3 +215,31 @@ URL/History QA: `quarter`, `plot`, filters и sort синхронизируют�
 - mobile bottom sheet non-modal, map help сообщает про pinch zoom, однопальцевый scroll страницы не блокируется; reduced-motion используется для focus/scroll/map transitions;
 - Browser QA выполнен на production Vite build. Финальная локальная вкладка оставлена на `http://127.0.0.1:8777/genplan?view=surroundings&place=mozhayskoe-more` в честном missing-key fallback.
 - После решения о переносе provider 2026-08-24 тестовый origin `https://relaxland.evoline.digital` повторно проверен без API key: `/genplan?view=surroundings` показывает controlled `configuration_missing`, 6 SSR Place и category controls; SDK scripts `0`, retry скрыт, console warning/error `0`, document overflow отсутствует.
+
+# Release 9 — Production Readiness & SEO Visual QA
+
+Дата проверки: 2026-08-24.
+
+Проверка выполнена на production Vite build в отдельной временной SQLite с `APP_ENV=production`, `APP_DEBUG=false`, explicit local canonical origin, `SEO_INDEXING_ENABLED=true` и `SURROUNDINGS_MAP_ENABLED=false`. Blog article и LegalDocument создавались только как QA fixtures; база удалена после проверки. Для наполненных Quarter/Plot/Place deep links дополнительно использованы существующие локальные fixtures без их изменения.
+
+Визуальные источники `home.pdf`, `blog.pdf`, `article.pdf`, `contacts.pdf`, `page.pdf`, `privacy.pdf`, `success.pdf`, `404.pdf` и `genplan.png` повторно просмотрены. Release 9 сохраняет утверждённую композицию и добавляет metadata/operational boundaries, а не новую визуальную систему.
+
+| Release 9 representative state / width | 360 | 390 | 768 | 1024 | 1280 | 1440 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Проверенная страница | Home | Article | Legal detail | Surroundings fallback | Contacts | 404 |
+| No horizontal overflow | PASS | PASS | PASS | PASS | PASS | PASS |
+| Exactly one H1 | PASS | PASS | PASS | PASS | PASS | PASS |
+| Broken images | 0 | 0 | 0 | 0 | 0 | 0 |
+| Missing `alt` on rendered images | 0 | 0 | 0 | 0 | 0 | 0 |
+
+Дополнительно на desktop проверены Home, About, Contacts, Blog root/article, Legal index/detail, Thanks, 404, Genplan overview, mode state и Surroundings state. Все 12 состояний имеют ожидаемые title/description/robots/canonical/OG; JSON-LD parsable, 404 canonical не получает, legal/thanks/error/query states не индексируются. Visual breadcrumbs и BreadcrumbList используют один controller payload.
+
+Accessibility smoke: header/main/footer landmarks присутствуют, по одному H1, skip link и visible focus foundation сохранены; видимые поля Lead modal имеют связанные labels, а семь неразмеченных inputs в автоматическом подсчёте оказались только техническими `type=hidden`. Mobile Home 390 px и desktop Article 1280 px осмотрены по screenshot; layout соответствует design hierarchy. Browser console warning/error log пуст.
+
+JavaScript-disabled эквивалент проверен по исходному HTTP SSR response до browser execution: Home H1/content, Blog article title/content, Surroundings heading/fallback и canonical metadata присутствуют. Progressive links доступны как обычные `href`. Browser backend не предоставляет отдельный persistent JavaScript-disable context, поэтому полноценный screen-reader/WCAG certification не заявляется; server-side regression дополнительно покрывает эти состояния.
+
+Broken-link crawl проверил 14 unique internal links из representative pages: HTTP 4xx/5xx — `0`. Empty Blog/Legal/Genplan и missing media остаются controlled states. External validators, Search Console, Rich Results Test и реальные Core Web Vitals отложены до фактического HTTPS production origin.
+
+Performance baseline: Home HTML 35.8 KB; основные empty/QA list/detail страницы 14.0–21.2 KB; наполненные Genplan deep links 63.2–73.8 KB. Vite build: CSS 126.48 KB / 24.67 KB gzip, JS 82.30 KB / 28.15 KB gzip. Query-bound regressions sitemap/Blog/Genplan проходят; Release 9 не добавляет provider/analytics requests. Эти числа являются локальной baseline, а не production Web Vitals.
+
+Provider QA сохраняет статус **DEFERRED**. На Home, Genplan overview, query/deep-link и Surroundings fallback обнаружено `0` Yandex map SDK scripts/requests. Существующий adapter/configuration не удалён, но карта не объявляется production-ready.

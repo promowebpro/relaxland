@@ -5,9 +5,12 @@ use App\Http\Controllers\GenplanController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LegalDocumentController;
 use App\Http\Controllers\PublicPageController;
+use App\Http\Controllers\SearchEngineController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicPageController::class, 'home'])->name('home');
+Route::get('/robots.txt', [SearchEngineController::class, 'robots'])->name('robots');
+Route::get('/sitemap.xml', [SearchEngineController::class, 'sitemap'])->name('sitemap');
 
 Route::get('/about', [PublicPageController::class, 'about'])->name('about');
 Route::get('/contacts', [PublicPageController::class, 'contacts'])->name('contacts');

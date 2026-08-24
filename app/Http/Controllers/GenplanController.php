@@ -8,6 +8,7 @@ use App\Domain\Genplan\NormalizedGeometry;
 use App\Domain\Genplan\PlotFilters;
 use App\Domain\Genplan\StraightLineDistance;
 use App\Domain\Genplan\SurroundingCategory;
+use App\Domain\Seo\SeoManager;
 use App\Domain\Settings\SiteSettings;
 use App\Http\Resources\PlotResource;
 use App\Http\Resources\SurroundingPlaceResource;
@@ -22,6 +23,7 @@ class GenplanController extends Controller
         NormalizedGeometry $geometry,
         SiteSettings $siteSettings,
         StraightLineDistance $distance,
+        SeoManager $seoManager,
     ): View {
         $genplan = $query->overviewForAllModes();
         $infrastructure = $genplan ? $query->infrastructureForAllModes() : collect();
@@ -80,6 +82,13 @@ class GenplanController extends Controller
             'mapConfig' => $this->mapConfig(),
             'geometry' => $geometry,
             'settings' => $settings,
+            'seo' => $seoManager->forPage(
+                path: '/genplan',
+                routeTitle: 'Генплан',
+                seoDescription: 'Генплан RelaxLand Можайский: кварталы, инфраструктура и расположение территории.',
+                indexable: ! $this->hasContentQuery($request),
+                settings: $settings,
+            ),
         ]);
     }
 
@@ -88,6 +97,12 @@ class GenplanController extends Controller
         $value = $request->query($key);
 
         return is_string($value) ? $value : null;
+    }
+
+    private function hasContentQuery(Request $request): bool
+    {
+        return collect(array_keys($request->query()))
+            ->contains(fn (string|int $key): bool => ! is_string($key) || ! str_starts_with($key, 'utm_'));
     }
 
     /** @return array<string, bool|int|string|null> */

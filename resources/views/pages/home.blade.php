@@ -16,7 +16,7 @@
 
 @section('title', $home->hero_title)
 @section('meta_title', $home->seo_title ?: $home->hero_title)
-@section('description', $home->seo_description ?: $home->hero_description)
+@section('description', $home->seo_description ?: ($home->hero_description ?: ''))
 @section('canonical', route('home'))
 @section('og_image', $ogImage)
 @section('body_class', 'home-page')

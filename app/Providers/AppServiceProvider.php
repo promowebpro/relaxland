@@ -12,6 +12,7 @@ use App\Domain\Genplan\SurroundingPlace;
 use App\Domain\Leads\Lead;
 use App\Domain\Leads\LeadConsentDocument;
 use App\Domain\Leads\LeadPolicy;
+use App\Domain\Seo\CanonicalUrl;
 use App\Domain\Settings\SettingsRepository;
 use App\Domain\Users\Enums\RoleName;
 use App\Models\User;
@@ -20,6 +21,7 @@ use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -39,8 +41,17 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+    public function boot(CanonicalUrl $canonicalUrl): void
     {
+        $publicUrl = $canonicalUrl->origin();
+        $scheme = parse_url($publicUrl, PHP_URL_SCHEME);
+        $host = parse_url($publicUrl, PHP_URL_HOST);
+
+        if (in_array($scheme, ['http', 'https'], true) && is_string($host) && $host !== '') {
+            URL::forceRootUrl(rtrim($publicUrl, '/'));
+            URL::forceScheme($scheme);
+        }
+
         Gate::policy(Genplan::class, GenplanContentPolicy::class);
         Gate::policy(Quarter::class, GenplanContentPolicy::class);
         Gate::policy(InfrastructurePoint::class, GenplanContentPolicy::class);

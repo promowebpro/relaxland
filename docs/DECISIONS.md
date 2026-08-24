@@ -301,3 +301,35 @@ SSR и клиент используют одинаковый resolved state. Pr
 - изменение public slug после публикации требует redirect strategy;
 - API availability, pricing и условия выбранного provider остаются внешней операционной зависимостью и проверяются перед production rollout;
 - Release 8 не добавляет booking, payment, account, маршрутизацию пользователя или Release 9 SEO/production automation.
+
+## ADR-008 — Public SEO and indexing boundary
+
+**Status:** Accepted, 2026-08-24.
+
+### Context
+
+Публичные страницы уже имели отдельные title/canonical/OpenGraph fragments, а Home и Blog — собственные SEO fields. Без единого contract request Host мог влиять на URL generation, query states Blog/Genplan создавали бы дубли, а robots/sitemap/structured data могли расходиться с visibility scopes. Одновременно content-manager должен управлять fallback-текстами без доступа к environment indexing switch или secrets.
+
+### Decision
+
+- `SeoManager` является единым metadata contract и переиспользует существующие Home/Blog SEO fields и `SettingsRepository`;
+- canonical origin задаётся только `SEO_PUBLIC_URL` из config, не определяется по request Host; production требует HTTPS и совпадение host с `APP_URL`;
+- global Settings содержат только site title, optional suffix, default description/OG image, factual organization name и locale; indexing, secrets и provider keys остаются environment config;
+- title/description используют детерминированные published entity → route → global fallbacks с HTML removal, whitespace normalization и multibyte-safe limits;
+- Home/About/Contacts/Blog root/published articles/Genplan overview indexable только при explicit `SEO_INDEXING_ENABLED=true`;
+- Blog filters/search/sort/pagination/unknown query и все Genplan selected states сохраняют UX/deep links, но получают `noindex` и overview canonical; `utm_*` исключаются из canonical без отключения индексируемости основной страницы;
+- legal pages сознательно noindex, thanks/errors noindex; admin/API получают `X-Robots-Tag`;
+- environment-aware robots закрывает весь non-production независимо от Host; sitemap включает только canonical public static routes и published Blog articles;
+- Organization/WebSite/BreadcrumbList/Article JSON-LD строится только из controlled public data; visual breadcrumbs и schema получают один массив;
+- OpenGraph image публикуется только при существующем public Storage file;
+- CSP не включается имитационно: сначала report-only design с точным Filament/Vite и будущим provider allowlist; HSTS включается только после подтверждённого HTTPS deployment.
+
+### Consequences
+
+- functional ADR-006 deep links не меняются, но не образуют индексируемые landing pages;
+- смена canonical host выполняется config change и cache rebuild, без миграции content/domain data;
+- новый environment безопасно закрыт от индексации до последнего launch step;
+- legal/query pages отсутствуют в sitemap и не противоречат robots meta;
+- public Settings cache остаётся единственной DB-backed глобальной SEO зависимостью; Blade components не выполняют отдельные SEO queries;
+- фактические organization/contact data и default OG media должны быть заполнены до открытия индексации;
+- внешняя Search Console/Rich Results validation и реальные Core Web Vitals остаются post-launch manual steps.

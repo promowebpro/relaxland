@@ -1,6 +1,7 @@
 @extends('layouts.public')
 
 @section('title', 'Спасибо')
+@section('robots', 'noindex, nofollow')
 
 @section('content')
     <section class="status-page status-page--success">

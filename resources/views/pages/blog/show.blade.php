@@ -1,44 +1,12 @@
 @extends('layouts.public')
 
-@php
-    $description = $post->seo_description ?: $post->excerpt ?: 'Статья блога RelaxLand Можайский';
-    $imagePath = $post->og_image ?: $post->cover_image;
-    $ogImage = $imagePath ? url(Storage::disk('public')->url($imagePath)) : null;
-@endphp
-
 @section('title', $post->title)
-@section('meta_title', $post->seo_title ?: $post->title)
-@section('description', $description)
-@section('canonical', route('blog.show', $post->slug))
-@section('og_title', $post->seo_title ?: $post->title)
-@section('og_description', $description)
-@section('og_type', 'article')
-@if ($ogImage)
-    @section('og_image', $ogImage)
-@endif
-
-@push('head')
-    <script type="application/ld+json">{!! json_encode([
-        '@context' => 'https://schema.org',
-        '@type' => 'Article',
-        'headline' => $post->title,
-        'description' => $description,
-        'datePublished' => $post->published_at->toAtomString(),
-        'dateModified' => $post->updated_at->toAtomString(),
-        'mainEntityOfPage' => route('blog.show', $post->slug),
-        'image' => $ogImage,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
-@endpush
 
 @section('content')
     <article class="blog-article">
         <header class="article-header">
             <div class="site-container">
-                <x-breadcrumbs :items="[
-                    ['label' => 'Главная', 'url' => route('home')],
-                    ['label' => 'Блог', 'url' => route('blog.index')],
-                    ['label' => $post->title],
-                ]" />
+                <x-breadcrumbs :items="$seo->breadcrumbs" />
 
                 <div class="article-header__meta">
                     <a href="{{ route('blog.index', ['category' => $post->category->slug]) }}">{{ $post->category->name }}</a>

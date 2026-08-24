@@ -22,10 +22,7 @@
 @section('content')
     <section class="page-intro page-intro--contacts">
         <div class="site-container">
-            <x-breadcrumbs :items="[
-                ['label' => 'Главная', 'url' => route('home')],
-                ['label' => 'Контакты'],
-            ]" />
+            <x-breadcrumbs :items="$seo->breadcrumbs" />
             <h1>Контакты</h1>
         </div>
     </section>

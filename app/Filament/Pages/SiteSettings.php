@@ -6,6 +6,7 @@ use App\Domain\Settings\SettingsRepository;
 use App\Domain\Users\Enums\PermissionName;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -55,6 +56,12 @@ class SiteSettings extends Page
         'presentation_file' => 'documents.presentation_file',
         'copyright' => 'footer.copyright',
         'footer_disclaimer' => 'footer.disclaimer',
+        'seo_site_title' => 'seo.site_title',
+        'seo_title_suffix' => 'seo.title_suffix',
+        'seo_default_description' => 'seo.default_description',
+        'seo_default_og_image' => 'seo.default_og_image',
+        'seo_organization_name' => 'seo.organization_name',
+        'seo_default_locale' => 'seo.default_locale',
     ];
 
     /** @var array<string, mixed> | null */
@@ -129,6 +136,47 @@ class SiteSettings extends Page
                             ->disabled($readOnly),
                         TextInput::make('copyright')->label('Copyright')->maxLength(255)->disabled($readOnly),
                         Textarea::make('footer_disclaimer')->label('Служебный дисклеймер')->rows(4)->columnSpanFull()->disabled($readOnly),
+                    ]),
+                Section::make('SEO')
+                    ->description('Глобальные fallback-значения. Индексация окружения включается только через production-конфигурацию, а не из админки.')
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('seo_site_title')
+                            ->label('Название сайта')
+                            ->maxLength(70)
+                            ->helperText('Используется как глобальный fallback и og:site_name.')
+                            ->disabled($readOnly),
+                        TextInput::make('seo_title_suffix')
+                            ->label('Суффикс title')
+                            ->maxLength(50)
+                            ->helperText('Необязательный текст после заголовка страницы; дубликаты автоматически исключаются.')
+                            ->disabled($readOnly),
+                        Textarea::make('seo_default_description')
+                            ->label('Описание по умолчанию')
+                            ->rows(3)
+                            ->maxLength(320)
+                            ->columnSpanFull()
+                            ->disabled($readOnly),
+                        TextInput::make('seo_organization_name')
+                            ->label('Юридическое / публичное название организации')
+                            ->maxLength(150)
+                            ->helperText('Попадает в Organization JSON-LD. Заполняйте только фактическим названием.')
+                            ->disabled($readOnly),
+                        Select::make('seo_default_locale')
+                            ->label('Локаль metadata')
+                            ->options(['ru_RU' => 'Русский (ru_RU)', 'en_RU' => 'English (en_RU)'])
+                            ->default('ru_RU')
+                            ->disabled($readOnly),
+                        FileUpload::make('seo_default_og_image')
+                            ->label('OpenGraph изображение по умолчанию')
+                            ->disk('public')
+                            ->directory('seo')
+                            ->image()
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                            ->maxSize(5120)
+                            ->helperText('JPEG, PNG или WebP до 5 МБ. Тег не выводится, если файл недоступен.')
+                            ->columnSpanFull()
+                            ->disabled($readOnly),
                     ]),
             ]);
     }

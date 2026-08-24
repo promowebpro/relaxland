@@ -7,10 +7,7 @@
 @section('content')
     <section class="page-intro page-intro--blog">
         <div class="site-container">
-            <x-breadcrumbs :items="[
-                ['label' => 'Главная', 'url' => route('home')],
-                ['label' => 'Блог'],
-            ]" />
+            <x-breadcrumbs :items="$seo->breadcrumbs" />
 
             <h1>Блог</h1>
         </div>

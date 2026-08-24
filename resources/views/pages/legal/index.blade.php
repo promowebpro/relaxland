@@ -6,10 +6,7 @@
 @section('content')
     <section class="page-intro page-intro--legal">
         <div class="site-container">
-            <x-breadcrumbs :items="[
-                ['label' => 'Главная', 'url' => route('home')],
-                ['label' => 'Конфиденциальность'],
-            ]" />
+            <x-breadcrumbs :items="$seo->breadcrumbs" />
             <h1>Конфиденциальность</h1>
         </div>
     </section>

@@ -1,6 +1,7 @@
 @extends('layouts.public')
 
 @section('title', 'Страница не найдена')
+@section('robots', 'noindex, nofollow')
 
 @section('content')
     <section class="status-page status-page--error">

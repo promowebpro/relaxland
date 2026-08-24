@@ -32,6 +32,12 @@ class SiteSettings
         'documents.presentation_file',
         'footer.copyright',
         'footer.disclaimer',
+        'seo.site_title',
+        'seo.title_suffix',
+        'seo.default_description',
+        'seo.default_og_image',
+        'seo.organization_name',
+        'seo.default_locale',
     ];
 
     public function __construct(private readonly SettingsRepository $settings) {}
