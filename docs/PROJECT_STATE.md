@@ -2,9 +2,9 @@
 
 ## Current Release
 
-Release 8 — Surroundings Map: **IMPLEMENTED — PRODUCTION KEY QA PENDING**.
+Release 8 — Surroundings Map: **IMPLEMENTED — MAP PROVIDER DEFERRED**.
 
-SSR `/genplan` и progressive JavaScript реализуют карту окружения с controlled POI, категориями, stable Place deep links, desktop sidebar/mobile bottom sheet, lazy Yandex v3 adapter и полным fallback без ключа/SDK. Реальный provider smoke-test не заявлен: в окружении нет production browser key с HTTP Referer restriction. Release 9 не начинался.
+SSR `/genplan` и progressive JavaScript сохраняют рабочее окружение с controlled POI, категориями, stable Place deep links, desktop sidebar/mobile bottom sheet и полным fallback без ключа/SDK. По продуктовому решению от 2026-08-24 подключение реального map provider отложено: существующие Yandex v3 adapter и configuration остаются в коде, но карта не считается production-ready, Release 8A отменён до отдельного решения владельца проекта, тарифы и внешние map services не подключаются. Release 9 не начинался.
 
 ## Completed Releases
 
@@ -150,6 +150,7 @@ SSR `/genplan` и progressive JavaScript реализуют карту окру�
 - Filament SurroundingPlace дополнен Genplan, slug, image, decimal ranges, HTTPS URL и controlled category validation; delete active Genplan дополнительно защищён при наличии Places. Координаты посёлка редактируются в существующей Site Settings page.
 - Выбор Yandex, lazy/fallback/security/CSP/replacement boundary зафиксированы в `docs/DECISIONS.md` (ADR-007), visual/provider QA — в `docs/VISUAL_QA.md`.
 - Release 8 regression: 12 PHP tests / 93 assertions и 2 Node adapter tests; полный PHP suite: 118 tests / 691 assertions.
+- Продуктовое решение от 2026-08-24 откладывает реального provider: Yandex adapter/configuration не удалены, SSR list/cards/categories/deep links и fallback остаются текущим публичным состоянием, карта не объявляется production-ready.
 
 ## Current Architecture
 
@@ -234,7 +235,7 @@ Release 1 не добавлял новые permissions. Используются
 - Multi-view Geometry — READY.
 - Genplan Interactions — READY.
 - Plot domain/admin/API/public selection — READY.
-- Surroundings domain/admin/API/public map — READY; real Yandex provider smoke-test — PENDING PRODUCTION KEY.
+- Surroundings domain/admin/API/public fallback — READY; интерактивный map provider — DEFERRED, карта не production-ready.
 - Full SEO module — NOT STARTED.
 
 ## Public Routes
@@ -327,7 +328,7 @@ Release 1 не добавлял новые permissions. Используются
 
 - MySQL 8+ недоступен в текущем окружении (`127.0.0.1:3306`). Полная схема Release 0–8 и отдельный forward/backfill/rollback Release 8 проверены на SQLite. Migrations используют portable Laravel Schema/Query API, JSON, DECIMAL, FK и composite unique, но перед production обязателен полный migration/rollback check на MySQL 8+; MySQL PASS не заявлен.
 - Production mail transport/получатель не настроены; уведомления о новых Leads намеренно отложены вместо фиктивного mail flow. Заявка сохраняется и сразу доступна в Filament.
-- Yandex Maps JavaScript API v3 выбран для Surroundings, но production browser key отсутствует. До rollout нужны HTTP Referer restriction, проверка разрешённого origin, tiles/attribution/events и актуальных provider terms/tariff; SSR fallback уже работает без ключа. Contacts сохраняет прежний presentation fallback.
+- Окончательный map provider отложен отдельным продуктовым решением. Перед production владелец проекта должен выбрать платный Yandex Maps либо Leaflet/OpenStreetMap/другой provider и выполнить provider-specific QA; карта до этого не production-ready. Существующий Yandex v3 adapter и configuration сохранены, а adapter contract позволяет пересмотреть provider без миграции `SurroundingPlace`, Settings, публичного API или URL. SSR fallback работает без ключа и остаётся текущим публичным состоянием; никаких тарифов и внешних map services на этом этапе не подключается.
 - Контакты, координаты, route links и юридические документы должны быть заполнены фактическими данными через Filament.
 - Точный фирменный display-font и отдельный исходник иллюстрации 404 отсутствуют; используются системный serif fallback и типографическая композиция до передачи исходников.
 - Полноценный production image pipeline с автоматическими AVIF/srcset-производными не внедряется в Release 3A; утверждённые PDF-фотографии готовятся в контролируемых WebP-размерах.
@@ -357,7 +358,7 @@ Release 1 не добавлял новые permissions. Используются
 ## Pending Work
 
 - Следующий этап по SPEC — Release 9 production QA/SEO, только после отдельного задания.
-- До Release 9/pre-production отдельно требуется real-provider smoke-test с ограниченным Yandex browser key; это не повод начинать booking/payment/account.
+- Release 8A отменён до отдельного решения владельца проекта. Перед production отдельно выбрать платный Yandex Maps либо Leaflet/OpenStreetMap/другой provider и затем выполнить соответствующий provider QA; текущий этап не подключает тарифы или внешние map services.
 - До production: MySQL 8+ migration check, реальные settings/legal/blog/Genplan data, 2D/3D/mobile plan assets, exact display-font и standalone 404 mascot при их передаче.
 
 ## Last Verification
@@ -389,7 +390,8 @@ Release 1 не добавлял новые permissions. Используются
 - Browser interactions Release 5: 2D/3D background + marker visibility, pointer/keyboard Quarter selection, Genplan/Surroundings tabs, mobile menu Escape/focus — PASS; console warning/error log пуст.
 - Browser QA Release 6: 360/390/768/1024/1280/1440 (дополнительно 320), default/2D/3D, Quarter/Infrastructure cards, close, mode-compatible persistence, missing geometry clear, tabs, Lead modal, direct links и Back/Forward — PASS; overflow и console warnings/errors отсутствуют.
 - Browser QA Release 7: 360/390/768/1024/1280/1440, Plot list/polygon/card, available/reserved/sold, filters/sort/empty, real network failure + retry, rapid 3D→2D race, mode-specific coordinates, missing geometry, direct Plot URL, Escape/focus и safe Lead context — PASS; overflow и console warnings/errors отсутствуют.
-- Browser QA Release 8: SSR list/card/filter/deep-link/focus/fallback на 360/390/768/1024/1280/1440 без overflow; invalid query canonicalization, missing image/route, provider failure/retry и repeated tab cycles — PASS. Adapter test double — PASS; real Yandex provider — PENDING PRODUCTION KEY.
+- Browser QA Release 8: SSR list/card/filter/deep-link/focus/fallback на 360/390/768/1024/1280/1440 без overflow; invalid query canonicalization, missing image/route, provider failure/retry и repeated tab cycles — PASS. Adapter test double — PASS; real map provider QA — DEFERRED по продуктовому решению, карта не production-ready.
+- Browser QA provider-deferred fallback 2026-08-24 на `https://relaxland.evoline.digital/genplan?view=surroundings` — PASS: `configuration_missing` является controlled state, 6 SSR Place доступны, SDK scripts `0`, retry скрыт, console issues `0`, horizontal overflow отсутствует.
 - Release 5A preflight перед Release 6: distinct polygon/label/marker coordinates на 390/1280, coordinated background/layer switch и отсутствие fallback — PASS; найденный пробел Quarter label renderer исправлен.
 - Filament browser QA: группа «Посёлок», пять CRUD listing/create routes и structured Quarter `x/y` Repeater — PASS.
 - В публичных Vite assets нет ссылок на Filament — PASS.
@@ -398,4 +400,4 @@ Release 1 не добавлял новые permissions. Используются
 
 ## Last Updated
 
-2026-08-17 — Release 8 завершён со статусом `IMPLEMENTED — PRODUCTION KEY QA PENDING`: provider-neutral POI, geographic contract, scoped migration/API/Filament, SSR fallback, lazy Yandex v3 adapter, category/list/marker/card state, Place deep links, failure/retry, responsive browser QA и полный regression; Release 9 не начинался.
+2026-08-24 — Release 8 зафиксирован со статусом `IMPLEMENTED — MAP PROVIDER DEFERRED`: provider-neutral POI, geographic contract, scoped migration/API/Filament, SSR list/cards/categories/deep links и fallback сохраняются; Yandex v3 adapter/configuration не удалены, но Release 8A отменён до отдельного решения владельца и карта не считается production-ready. Перед production требуется отдельный выбор между платным Yandex Maps и Leaflet/OpenStreetMap/другим provider; Release 9 не начинался.

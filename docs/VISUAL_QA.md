@@ -181,6 +181,8 @@ URL/History QA: `quarter`, `plot`, filters и sort синхронизируют�
 
 Дата проверки: 2026-08-17.
 
+Статус provider QA обновлён 2026-08-24: **DEFERRED** по продуктовому решению. Release 8A отменён до отдельного решения владельца проекта; тарифы и внешние map services на текущем этапе не подключаются. Интерактивная карта не считается production-ready, при этом SSR fallback является рабочим публичным состоянием, а существующие Yandex adapter/configuration сохранены.
+
 Источник визуальной истины — Surroundings state в `docs/design/genplan.png`: desktop map/sidebar и mobile map/bottom sheet. `docs/design/contacts.pdf` дополнительно подтверждает язык map fallback и отдельной route card. Новые controls продолжают существующую систему: pale-blue shell, белые cards, тёмные pill actions и controlled category symbols; произвольные SVG/HTML icons из CMS не используются.
 
 Локальный QA fixture содержит один active Genplan, координаты посёлка в существующих Settings и шесть active SurroundingPlace в пяти категориях. У всех мест отсутствует image, у одного отсутствует external URL — эти состояния проверены без broken image и пустого действия. Fixture находится только в локальной SQLite и не входит в migrations/seed/commit.
@@ -199,7 +201,8 @@ URL/History QA: `quarter`, `plot`, filters и sort синхронизируют�
 - **SSR/progressive fallback — PASS.** Без key и без внешнего SDK доступны заголовок, координаты, present-category filters, шесть мест, straight-line distance labels, карточка, deep link и безопасные route links. Home и default `/genplan` SDK не загружают.
 - **Provider adapter с test double — PASS.** Node test проверяет distinct settlement/place markers, controlled text DOM, click selection, aria state, bounds, zoom, category update без duplicate markers, destroy и удаление failed SDK scripts перед новой попыткой.
 - **Негативный browser provider test — PASS.** Заведомо недействительный локальный key даёт controlled `provider_unavailable`, сохраняет список, показывает retry, не пишет warning/error в browser console и после трёх повторных tab cycles оставляет `0` failed SDK scripts.
-- **Реальный Yandex provider — PENDING PRODUCTION KEY.** В окружении нет production browser key с HTTP Referer restriction, поэтому tiles, vendor attribution и реальный provider event lifecycle не объявляются проверенными. Этот пункт обязателен до production rollout.
+- **Реальный map provider QA — DEFERRED.** SDK/key/referrer, tiles, vendor attribution, settlement/Place markers, provider viewport, gestures и network lifecycle не объявляются проверенными. Перед production владелец проекта отдельно выбирает платный Yandex Maps либо Leaflet/OpenStreetMap/другой provider; существующий adapter contract позволяет сделать это без миграции domain data.
+- **Fallback regression — PASS.** Отсутствие API key/provider не вызывает white screen или uncaught error: SSR list/cards/categories/deep links, distance labels и route links остаются доступны, а интерфейс честно сообщает, что карта дополняет список.
 
 ## Проверенные interaction/state сценарии
 
@@ -211,3 +214,4 @@ URL/History QA: `quarter`, `plot`, filters и sort синхронизируют�
 - расстояние подписано «по прямой» и скрывается при отсутствии settlement point; missing route URL не создаёт пустую ссылку;
 - mobile bottom sheet non-modal, map help сообщает про pinch zoom, однопальцевый scroll страницы не блокируется; reduced-motion используется для focus/scroll/map transitions;
 - Browser QA выполнен на production Vite build. Финальная локальная вкладка оставлена на `http://127.0.0.1:8777/genplan?view=surroundings&place=mozhayskoe-more` в честном missing-key fallback.
+- После решения о переносе provider 2026-08-24 тестовый origin `https://relaxland.evoline.digital` повторно проверен без API key: `/genplan?view=surroundings` показывает controlled `configuration_missing`, 6 SSR Place и category controls; SDK scripts `0`, retry скрыт, console warning/error `0`, document overflow отсутствует.

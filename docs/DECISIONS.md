@@ -256,7 +256,7 @@ SSR и клиент используют одинаковый resolved state. Pr
 
 ## ADR-007 — Surroundings map provider boundary
 
-**Status:** Accepted, 2026-08-17; production-key verification pending.
+**Status:** Accepted, 2026-08-17; map provider deferred by product decision, 2026-08-24.
 
 ### Context
 
@@ -293,8 +293,11 @@ SSR и клиент используют одинаковый resolved state. Pr
 
 ### Consequences
 
-- перед production требуется реальный ограниченный Yandex browser key и отдельный smoke-test загрузки tiles/attribution на разрешённом origin;
-- замена provider выполняется новым adapter и config при сохранении public DTO/URL/domain contracts;
+- Release 8A отменён до отдельного решения владельца проекта; реальный provider QA, подключение тарифа и любые внешние map services на текущем этапе не выполняются;
+- SSR Surroundings list/cards/categories/deep links и fallback без provider остаются рабочим публичным состоянием, но интерактивная карта не считается production-ready;
+- существующие Yandex v3 adapter и configuration не удаляются и сохраняются как один из вариантов будущего подключения;
+- перед production требуется отдельный продуктовый выбор: платный Yandex Maps либо Leaflet/OpenStreetMap/другой provider, после чего выполняется provider-specific QA;
+- окончательный provider может быть пересмотрен без миграции domain data, public DTO или URL благодаря существующему adapter contract; замена выполняется новым adapter и config;
 - изменение public slug после публикации требует redirect strategy;
-- API availability, pricing и условия Yandex остаются внешней операционной зависимостью и проверяются перед production rollout;
+- API availability, pricing и условия выбранного provider остаются внешней операционной зависимостью и проверяются перед production rollout;
 - Release 8 не добавляет booking, payment, account, маршрутизацию пользователя или Release 9 SEO/production automation.
