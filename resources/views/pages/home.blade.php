@@ -9,8 +9,8 @@
         '2Гис' => $settings['routes.two_gis'],
     ])->filter();
     $rhythmPresets = [
-        ['slot' => 'morning', 'phase' => 'opening', 'label' => 'Утро', 'title' => 'Пробежка по лесу, воркаут и йога на траве', 'image_alt' => 'Пробежка по лесу', 'fallback' => 'assets/design/home-target-runners.jpg', 'animal' => 'assets/design/home-rhythm-rabbit.svg'],
-        ['slot' => 'coworking', 'phase' => 'opening', 'label' => 'День', 'title' => 'Работа из коворкинга, с оптоволоконным интернетом', 'image_alt' => 'Работа в коворкинге', 'fallback' => 'assets/design/home-target-coworking.jpg', 'animal' => 'assets/design/home-rhythm-hedgehog.svg'],
+        ['slot' => 'morning', 'phase' => 'opening', 'label' => 'Утро', 'title' => 'Пробежка по лесу, воркаут и йога на траве', 'image_alt' => 'Пробежка по лесу', 'fallback' => 'assets/design/home-target-runners.webp', 'animal' => 'assets/design/home-rhythm-rabbit.svg'],
+        ['slot' => 'coworking', 'phase' => 'opening', 'label' => 'День', 'title' => 'Работа из коворкинга, с оптоволоконным интернетом', 'image_alt' => 'Работа в коворкинге', 'fallback' => 'assets/design/home-target-coworking.webp', 'animal' => 'assets/design/home-rhythm-hedgehog.svg'],
         ['slot' => 'evening', 'phase' => 'middle', 'label' => 'Вечер', 'title' => 'Гулять с домашним питомцем', 'image_alt' => 'Вечерняя прогулка с домашним питомцем', 'fallback' => 'assets/design/home-rhythm-evening.webp'],
         ['slot' => 'walk', 'phase' => 'closing', 'label' => '', 'title' => 'Прогулка по лесу', 'image_alt' => 'Прогулка по вечернему лесу', 'fallback' => 'assets/design/home-rhythm-walk.webp'],
         ['slot' => 'dog-run', 'phase' => 'middle', 'label' => 'Выходные', 'title' => 'Отдых с домашним питомцем', 'image_alt' => 'Собака на лесной тропе', 'fallback' => 'assets/design/home-rhythm-dog-run.webp'],
@@ -44,7 +44,7 @@
                 :mobile-path="$home->hero_image_mobile"
                 :alt="$home->hero_image_alt ?: ''"
                 :eager="true"
-                fallback="assets/design/home-target-foliage.jpg"
+                fallback="assets/design/home-target-foliage.webp"
             />
         </div>
         <div class="site-container home-hero__content">
@@ -162,11 +162,11 @@
     @php
         $careSlides = collect($home->care_items ?: \App\Models\HomePage::defaultContent()['care_items'])->take(5)->values();
         $carePresetImages = [
-            'service' => 'assets/design/home-care-service.svg',
-            'utilities' => 'assets/design/home-care-utilities.svg',
-            'family' => 'assets/design/home-care-family.svg',
-            'sport' => 'assets/design/home-care-sport.svg',
-            'security' => 'assets/design/home-care-security.svg',
+            'service' => 'assets/design/home-care-service.webp',
+            'utilities' => 'assets/design/home-care-utilities.webp',
+            'family' => 'assets/design/home-care-family.webp',
+            'sport' => 'assets/design/home-care-sport.webp',
+            'security' => 'assets/design/home-care-security.webp',
         ];
     @endphp
 
@@ -272,7 +272,7 @@
                                 <img class="home-season-card__mascot home-season-card__mascot--moose" src="{{ asset('assets/design/home-rhythm-moose.svg') }}" alt="" decoding="async" aria-hidden="true">
                                 <img class="home-season-card__mascot home-season-card__mascot--dog" src="{{ asset('assets/design/home-rhythm-dog.svg') }}" alt="" decoding="async" aria-hidden="true">
                                 <div class="home-season-card__media">
-                                    <img src="{{ asset('assets/design/home-target-hammock.jpg') }}" alt="Гамак в летнем лесу" loading="lazy">
+                                    <img src="{{ asset('assets/design/home-target-hammock.webp') }}" alt="Гамак в летнем лесу" loading="lazy">
                                     <div class="home-season-card__copy">
                                         <h3>лето</h3>
                                         <p>Устраивайте перезагрузку каждые выходные, а не 1–2 раза в году</p>
@@ -285,7 +285,7 @@
                                 <img class="home-season-card__mascot home-season-card__mascot--hedgehog" src="{{ asset('assets/design/home-rhythm-hedgehog.svg') }}" alt="" decoding="async" aria-hidden="true">
                                 <img class="home-season-card__mascot home-season-card__mascot--rabbit" src="{{ asset('assets/design/home-rhythm-rabbit.svg') }}" alt="" decoding="async" aria-hidden="true">
                                 <div class="home-season-card__media">
-                                    <img src="{{ asset('assets/design/home-target-winter.jpg') }}" alt="Зимний вечер у дома" loading="lazy">
+                                    <img src="{{ asset('assets/design/home-target-winter.webp') }}" alt="Зимний вечер у дома" loading="lazy">
                                     <div class="home-season-card__copy">
                                         <h3>зима</h3>
                                         <p>Морозное утро в лесу и тихий вечер в тепле — больше не надо выбирать</p>
@@ -303,7 +303,7 @@
     <section class="home-section home-genplan" aria-labelledby="home-genplan-title">
         <div class="site-container">
             <div class="home-genplan__frame">
-                <img src="{{ asset('assets/design/home-target-genplan.jpg') }}" alt="Генеральный план посёлка" loading="lazy">
+                <img src="{{ asset('assets/design/home-target-genplan.webp') }}" alt="Генеральный план посёлка" loading="lazy">
                 <div class="home-genplan__overlay">
                     <h2 id="home-genplan-title">Генплан</h2>
                     <p>Разноформатные участки в окружении природы создают пространство для спокойной и осознанной жизни</p>
@@ -424,7 +424,7 @@
         <div class="site-container">
             <div class="home-visit__map">
                 <div class="home-visit__map-canvas" tabindex="0" aria-label="Интерактивная карта: перетаскивайте её и используйте колесо мыши для масштаба" data-home-map>
-                    <img class="home-visit__map-image" src="{{ asset('assets/design/home-target-map.jpg') }}" alt="Карта маршрута" loading="lazy" draggable="false" data-home-map-image>
+                    <img class="home-visit__map-image" src="{{ asset('assets/design/home-target-map.webp') }}" alt="Карта маршрута" loading="lazy" draggable="false" data-home-map-image>
                     <div class="home-visit__map-controls" aria-label="Управление картой">
                         <button type="button" aria-label="Увеличить масштаб" data-home-map-zoom-in>+</button>
                         <button type="button" aria-label="Уменьшить масштаб" data-home-map-zoom-out>−</button>

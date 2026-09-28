@@ -161,7 +161,7 @@ class PublicHomeTest extends TestCase
             ->assertOk()
             ->assertSee('data-home-care', false)
             ->assertSee('data-home-care-tab', false)
-            ->assertSee('home-care-security.svg', false)
+            ->assertSee('home-care-security.webp', false)
             ->assertSee('<li>Охрана 24/7</li>', false)
             ->assertSee('<li>Умный домофон</li>', false)
             ->assertSee('Примечание редактора')
