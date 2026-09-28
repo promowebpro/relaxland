@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Domain\Seo\SeoManager;
 use App\Domain\Settings\SiteSettings;
+use App\Models\AboutPage;
 use App\Models\BlogPost;
 use App\Models\HomePage;
 use App\Models\Story;
@@ -30,7 +31,7 @@ class PublicPageController extends Controller
                 ->publiclyVisible()
                 ->latest('published_at')
                 ->latest('id')
-                ->limit(3)
+                ->limit(4)
                 ->get(),
             'seo' => $seoManager->forPage(
                 path: '/',
@@ -48,9 +49,23 @@ class PublicPageController extends Controller
     public function contacts(SiteSettings $siteSettings, SeoManager $seoManager): View
     {
         $settings = $siteSettings->all();
+        $visitContent = AboutPage::pageContent();
+        foreach ([
+            'map_latitude' => 'contacts.village_latitude',
+            'map_longitude' => 'contacts.village_longitude',
+            'travel_text' => 'contacts.travel_time',
+            'route_yandex' => 'routes.yandex',
+            'route_google' => 'routes.google',
+            'route_two_gis' => 'routes.two_gis',
+        ] as $field => $setting) {
+            if (filled($settings[$setting])) {
+                $visitContent[$field] = $settings[$setting];
+            }
+        }
 
         return view('pages.contacts', [
             'settings' => $settings,
+            'visitContent' => $visitContent,
             'seo' => $seoManager->forPage(
                 path: '/contacts',
                 routeTitle: 'Контакты',
@@ -66,17 +81,18 @@ class PublicPageController extends Controller
 
     public function about(SiteSettings $siteSettings, SeoManager $seoManager): View
     {
-        $home = HomePage::query()->active()->first() ?: new HomePage(HomePage::defaultContent());
+        $about = AboutPage::pageContent();
         $settings = $siteSettings->all();
 
         return view('pages.about', [
-            'home' => $home,
+            'about' => $about,
             'settings' => $settings,
             'seo' => $seoManager->forPage(
                 path: '/about',
-                routeTitle: 'О нас',
-                seoDescription: 'RelaxLand Можайский — посёлок, которому доверяют заботу о загородной жизни.',
-                summary: $home->developer_text,
+                routeTitle: $about['title'],
+                seoTitle: $about['seo_title'],
+                seoDescription: $about['seo_description'],
+                summary: $about['trust_text'],
                 breadcrumbs: [
                     ['label' => 'Главная', 'url' => '/'],
                     ['label' => 'О нас'],

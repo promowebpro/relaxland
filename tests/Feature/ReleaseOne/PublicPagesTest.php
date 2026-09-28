@@ -55,7 +55,9 @@ class PublicPagesTest extends TestCase
         $this->get('/definitely-missing-page')
             ->assertNotFound()
             ->assertSee('Ошибка 404')
-            ->assertSee('Такой страницы нет');
+            ->assertSee('Такой страницы нет')
+            ->assertSee('error-404-art.png')
+            ->assertSee('noindex, nofollow');
     }
 
     public function test_only_active_and_published_legal_documents_are_public(): void
@@ -110,6 +112,22 @@ class PublicPagesTest extends TestCase
             ->assertSee('Ежедневно 09:00–20:00')
             ->assertSee('Тестовый адрес посёлка')
             ->assertSee('© RelaxLand Test');
+    }
+
+    public function test_contacts_use_configured_live_map_and_contextual_invitation(): void
+    {
+        $settings = app(SettingsRepository::class);
+        $settings->set('contacts.village_latitude', 55.8, 'contacts', true);
+        $settings->set('contacts.village_longitude', 36.4, 'contacts', true);
+        $settings->set('routes.yandex', 'https://yandex.ru/maps/?test=route', 'routes', true);
+
+        $this->get(route('contacts'))->assertOk()
+            ->assertSee('data-latitude="55.8"', false)
+            ->assertSee('data-longitude="36.4"', false)
+            ->assertSee('https://yandex.ru/maps/?test=route', false)
+            ->assertSee('data-lead-source="contacts"', false)
+            ->assertSee('about-hedgehog.svg')
+            ->assertDontSee('contacts-map.webp');
     }
 
     public function test_legal_html_is_sanitized_on_write_and_render(): void

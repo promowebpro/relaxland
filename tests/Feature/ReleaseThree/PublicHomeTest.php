@@ -55,6 +55,19 @@ class PublicHomeTest extends TestCase
             ->assertDontSee('Скрытая версия главной');
     }
 
+    public function test_visit_section_contains_provider_independent_interactive_map_controls(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('data-home-map', false)
+            ->assertSee('class="home-visit__map-image"', false)
+            ->assertSee('data-home-map-zoom-in', false)
+            ->assertSee('data-home-map-zoom-out', false)
+            ->assertSee('data-home-map-reset', false)
+            ->assertDontSee('map-widget', false)
+            ->assertDontSee('apikey', false);
+    }
+
     public function test_only_active_stories_are_rendered_in_stable_order(): void
     {
         Story::factory()->create(['title' => 'Вторая история', 'sort_order' => 20]);
@@ -69,11 +82,11 @@ class PublicHomeTest extends TestCase
         $this->assertSame(['Первая история', 'Вторая история'], $response->viewData('stories')->pluck('title')->all());
     }
 
-    public function test_blog_preview_contains_only_three_public_posts(): void
+    public function test_blog_preview_contains_only_four_public_posts(): void
     {
         $category = BlogCategory::factory()->create();
         $inactiveCategory = BlogCategory::factory()->inactive()->create();
-        $visible = collect(range(1, 4))->map(fn (int $index): BlogPost => BlogPost::factory()->for($category, 'category')->create([
+        $visible = collect(range(1, 5))->map(fn (int $index): BlogPost => BlogPost::factory()->for($category, 'category')->create([
             'title' => "Публичная статья {$index}",
             'published_at' => now()->subDays($index),
         ]));
@@ -89,7 +102,11 @@ class PublicHomeTest extends TestCase
             ->assertDontSee($inactive->title);
 
         $posts = $response->viewData('blogPosts');
-        $this->assertCount(3, $posts);
+        $this->assertCount(4, $posts);
+        $this->assertSame($visible->take(4)->pluck('id')->all(), $posts->pluck('id')->all());
+        foreach ($posts as $post) {
+            $response->assertSee('href="'.route('blog.show', $post->slug).'"', false)->assertSee($post->title);
+        }
         $this->assertTrue($posts->every(fn (BlogPost $post): bool => $post->status === BlogPostStatus::Published
             && $post->relationLoaded('category')
             && ! array_key_exists('content', $post->getAttributes())));
@@ -115,5 +132,64 @@ class PublicHomeTest extends TestCase
             ->assertSee('Безопасное преимущество')
             ->assertDontSee('<script>', false)
             ->assertDontSee('onerror', false);
+    }
+
+    public function test_care_carousel_renders_editable_plain_text_content_and_preset_media(): void
+    {
+        $home = HomePage::query()->create(array_replace(HomePage::defaultContent(), [
+            'care_items' => [[
+                'title' => '<b>Редактируемая безопасность</b>',
+                'text' => "Охрана 24/7\nУмный домофон",
+                'note' => '<script>alert(1)</script>Примечание редактора',
+                'image_preset' => 'security',
+                'image_alt' => 'Камера на территории',
+                'icon' => 'security',
+                'unknown' => 'не должно сохраниться',
+            ]],
+        ]));
+
+        $this->assertSame([
+            'title' => 'Редактируемая безопасность',
+            'text' => "Охрана 24/7\nУмный домофон",
+            'note' => 'alert(1)Примечание редактора',
+            'image_alt' => 'Камера на территории',
+            'image_preset' => 'security',
+            'icon' => 'security',
+        ], $home->care_items[0]);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('data-home-care', false)
+            ->assertSee('data-home-care-tab', false)
+            ->assertSee('home-care-security.svg', false)
+            ->assertSee('<li>Охрана 24/7</li>', false)
+            ->assertSee('<li>Умный домофон</li>', false)
+            ->assertSee('Примечание редактора')
+            ->assertDontSee('<script>', false);
+    }
+
+    public function test_rhythm_storyboard_uses_editable_slides_and_fixed_design_layers(): void
+    {
+        HomePage::query()->create(array_replace(HomePage::defaultContent(), [
+            'life_scenarios' => [[
+                'label' => 'Тестовое утро',
+                'title' => 'Редактируемый сценарий',
+                'text' => 'Описание из административной панели',
+                'image' => 'home/collections/rhythm-test.jpg',
+                'image_alt' => 'Редактируемое изображение',
+            ]],
+        ]));
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('data-home-rhythm', false)
+            ->assertSee('Тестовое утро')
+            ->assertSee('Редактируемый сценарий')
+            ->assertSee('Описание из административной панели')
+            ->assertSee('/storage/home/collections/rhythm-test.jpg', false)
+            ->assertSee('home-rhythm-rabbit.svg', false)
+            ->assertSee('home-rhythm-hedgehog.svg', false)
+            ->assertSee('home-rhythm-moose.svg', false)
+            ->assertSee('home-rhythm-dog.svg', false);
     }
 }

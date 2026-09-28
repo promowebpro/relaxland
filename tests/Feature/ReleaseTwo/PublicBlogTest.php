@@ -101,6 +101,40 @@ class PublicBlogTest extends TestCase
             ->assertSee('q=forest', false);
     }
 
+    public function test_listing_paginates_twelve_posts_without_duplicates(): void
+    {
+        $category = BlogCategory::factory()->create();
+        BlogPost::factory()->count(25)->for($category, 'category')->create();
+        $first = $this->get(route('blog.index'))->assertOk()->viewData('posts');
+        $second = $this->get(route('blog.index', ['page' => 2]))->assertOk()->viewData('posts');
+        $last = $this->get(route('blog.index', ['page' => 3]))->assertOk()->viewData('posts');
+
+        $this->assertCount(12, $first);
+        $this->assertCount(12, $second);
+        $this->assertCount(1, $last);
+        $this->assertCount(25, collect([$first, $second, $last])->flatMap(fn ($page) => $page->pluck('id'))->unique());
+        $this->get(route('blog.index', ['page' => 4]))->assertNotFound();
+    }
+
+    public function test_post_can_appear_in_multiple_rubrics_without_duplicates(): void
+    {
+        $building = BlogCategory::factory()->create(['slug' => 'building']);
+        $advice = BlogCategory::factory()->create(['slug' => 'advice']);
+        $post = BlogPost::factory()->for($building, 'category')->create();
+        $post->tags()->sync([$building->id, $advice->id]);
+
+        foreach (['building', 'advice'] as $slug) {
+            $response = $this->get(route('blog.index', ['category' => $slug]))->assertOk()->assertSee($post->title);
+            $this->assertCount(1, $response->viewData('posts'));
+        }
+        $this->assertCount(1, $this->get(route('blog.index'))->assertOk()->viewData('posts'));
+        $this->get(route('blog.show', $post->slug))->assertOk()->assertSee($building->name)->assertSee($advice->name);
+        $building->update(['is_active' => false]);
+        $this->get(route('blog.index', ['category' => 'advice']))->assertOk()->assertSee($post->title);
+        $advice->update(['is_active' => false]);
+        $this->get(route('blog.show', $post->slug))->assertNotFound();
+    }
+
     public function test_previous_and_next_use_stable_publication_order_and_exclude_hidden_posts(): void
     {
         $category = BlogCategory::factory()->create();

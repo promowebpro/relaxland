@@ -53,7 +53,7 @@ class SeoMetadataTest extends TestCase
 
         $this->get('/about')
             ->assertOk()
-            ->assertSee('<title>О нас — РелаксЛэнд</title>', false)
+            ->assertSee('<title>О девелопере — РелаксЛэнд</title>', false)
             ->assertDontSee('РелаксЛэнд — РелаксЛэнд', false);
     }
 

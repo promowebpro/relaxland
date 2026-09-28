@@ -7,6 +7,7 @@ use App\Models\HomePage;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -92,7 +93,7 @@ class HomeContentPage extends Page
                     ->schema([
                         TextInput::make('care_title')->label('Заголовок')->maxLength(255)->disabled($readOnly),
                         Textarea::make('care_text')->label('Описание')->rows(3)->disabled($readOnly),
-                        Repeater::make('care_items')->label('Элементы заботы')->schema(self::textItemFields($readOnly))->minItems(1)->maxItems(8)->columnSpanFull()->disabled($readOnly),
+                        Repeater::make('care_items')->label('Слайды заботы и сервиса')->schema(self::careItemFields($readOnly))->minItems(1)->maxItems(5)->columns(2)->columnSpanFull()->disabled($readOnly),
                     ]),
                 Section::make('Сезоны')
                     ->columns(2)
@@ -184,6 +185,33 @@ class HomeContentPage extends Page
             FileUpload::make('image')->label('Desktop изображение')->disk('public')->directory('home/collections')->acceptedFileTypes(self::IMAGE_TYPES)->maxSize(15360)->image()->disabled($readOnly),
             FileUpload::make('image_mobile')->label('Mobile изображение')->disk('public')->directory('home/collections')->acceptedFileTypes(self::IMAGE_TYPES)->maxSize(15360)->image()->disabled($readOnly),
             TextInput::make('image_alt')->label('Alt')->maxLength(500)->disabled($readOnly),
+        ];
+    }
+
+    /** @return array<int, FileUpload|Select|TextInput|Textarea> */
+    private static function careItemFields(callable $readOnly): array
+    {
+        return [
+            Textarea::make('title')->label('Заголовок')->required()->rows(2)->maxLength(255)->disabled($readOnly),
+            Select::make('icon')->label('Иконка')->options([
+                'heart' => 'Сердце — служба заботы',
+                'utilities' => 'Лампочка — коммуникации',
+                'home' => 'Дом — семья',
+                'sport' => 'Мяч — спорт',
+                'security' => 'Щит — безопасность',
+            ])->required()->disabled($readOnly),
+            Textarea::make('text')->label('Пункты списка — каждый с новой строки')->rows(9)->maxLength(2000)->columnSpanFull()->disabled($readOnly),
+            Textarea::make('note')->label('Дополнительное примечание')->rows(4)->maxLength(2000)->columnSpanFull()->disabled($readOnly),
+            Select::make('image_preset')->label('Исходное изображение')->options([
+                'service' => 'Белый кролик — служба заботы',
+                'utilities' => 'Газ — коммуникации',
+                'family' => 'Птица — семья',
+                'sport' => 'Теннисный мяч — спорт',
+                'security' => 'Камера — безопасность',
+            ])->disabled($readOnly),
+            FileUpload::make('image')->label('Свое desktop изображение')->disk('public')->directory('home/care')->acceptedFileTypes(self::IMAGE_TYPES)->maxSize(20480)->image()->disabled($readOnly),
+            FileUpload::make('image_mobile')->label('Свое mobile изображение')->disk('public')->directory('home/care')->acceptedFileTypes(self::IMAGE_TYPES)->maxSize(20480)->image()->disabled($readOnly),
+            TextInput::make('image_alt')->label('Alt изображения')->maxLength(500)->columnSpanFull()->disabled($readOnly),
         ];
     }
 

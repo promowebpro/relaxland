@@ -8,25 +8,13 @@
             <div class="site-container">
                 <x-breadcrumbs :items="$seo->breadcrumbs" />
 
-                <div class="article-header__meta">
-                    <a href="{{ route('blog.index', ['category' => $post->category->slug]) }}">{{ $post->category->name }}</a>
-                    <time datetime="{{ $post->published_at->toDateString() }}">{{ $post->published_at->translatedFormat('d F Y') }}</time>
-                    @if ($post->reading_time)
-                        <span>{{ $post->reading_time }} мин чтения</span>
-                    @endif
-                </div>
-
                 <h1>{{ $post->title }}</h1>
-
-                @if ($post->excerpt)
-                    <p class="article-header__lead">{{ $post->excerpt }}</p>
-                @endif
 
                 <div class="article-header__cover">
                     @if ($post->cover_image)
-                        <img src="{{ Storage::disk('public')->url($post->cover_image) }}" alt="" fetchpriority="high">
+                        <img src="{{ Storage::disk('public')->url($post->cover_image) }}" alt="{{ $post->title }}" fetchpriority="high">
                     @else
-                        <img src="{{ asset('assets/design/blog-01.webp') }}" alt="" fetchpriority="high">
+                        <img src="{{ asset('assets/design/blog-'.str_pad((string) (($post->id - 1) % 6 + 1), 2, '0', STR_PAD_LEFT).'.webp') }}" alt="{{ $post->title }}" fetchpriority="high">
                     @endif
                 </div>
             </div>
@@ -34,27 +22,29 @@
 
         <div class="article-layout site-container">
             <aside class="article-sidebar">
+                <div class="article-sidebar__details">
+                <h2>Детали статьи</h2>
                 <dl>
-                    <div><dt>Дата</dt><dd>{{ $post->published_at->translatedFormat('d.m.Y') }}</dd></div>
+                    <div><dt>Дата</dt><dd><time datetime="{{ $post->published_at->toDateString() }}">{{ $post->published_at->translatedFormat('d.m.Y') }}</time></dd></div>
+                    <div><dt>Теги</dt><dd class="article-sidebar__tags">@foreach ($post->tags->isNotEmpty() ? $post->tags : collect([$post->category]) as $tag)<a href="{{ route('blog.index', ['category' => $tag->slug]) }}">{{ $tag->name }}</a>@endforeach</dd></div>
                     @if ($post->reading_time)<div><dt>Чтение</dt><dd>{{ $post->reading_time }} минут</dd></div>@endif
-                    <div><dt>Рубрика</dt><dd>{{ $post->category->name }}</dd></div>
                 </dl>
-                @php($headings = collect($blocks)->where('type', 'heading')->take(6))
+                </div>
+                @php($headings = collect($blocks)->where('type', 'heading'))
                 @if ($headings->isNotEmpty())
                     <nav aria-label="Содержание статьи">
-                        <span>В статье</span>
-                        @foreach ($headings as $heading)<p>{{ $heading['data']['text'] }}</p>@endforeach
+                        @foreach ($headings as $index => $heading)<a href="#article-section-{{ $index }}">{{ $heading['data']['text'] }}</a>@endforeach
                     </nav>
                 @endif
             </aside>
             <div class="article-content">
-            @foreach ($blocks as $block)
+            @foreach ($blocks as $blockIndex => $block)
                 @switch($block['type'])
                     @case('heading')
                         @if ($block['data']['level'] === 3)
-                            <h3>{{ $block['data']['text'] }}</h3>
+                            <h3 id="article-section-{{ $blockIndex }}">{{ $block['data']['text'] }}</h3>
                         @else
-                            <h2>{{ $block['data']['text'] }}</h2>
+                            <h2 id="article-section-{{ $blockIndex }}">{{ $block['data']['text'] }}</h2>
                         @endif
                         @break
 
@@ -93,7 +83,7 @@
         <nav class="article-navigation site-container" aria-label="Другие статьи">
             @if ($previousPost)
                 <a class="article-navigation__item" href="{{ route('blog.show', $previousPost->slug) }}" rel="prev">
-                    <span>Предыдущая статья</span>
+                    <span>Предыдущий</span>
                     <strong>{{ $previousPost->title }}</strong>
                 </a>
             @else
@@ -102,7 +92,7 @@
 
             @if ($nextPost)
                 <a class="article-navigation__item article-navigation__item--next" href="{{ route('blog.show', $nextPost->slug) }}" rel="next">
-                    <span>Следующая статья</span>
+                    <span>Следующий</span>
                     <strong>{{ $nextPost->title }}</strong>
                 </a>
             @endif

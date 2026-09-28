@@ -1,8 +1,9 @@
 @props(['settings' => []])
 
 @php
-    $phone = $settings['contacts.sales_phone'] ?: $settings['contacts.phone'];
+    $phone = $settings['contacts.sales_phone'] ?: $settings['contacts.phone'] ?: (request()->routeIs('home') ? '+7 968 000-00-00' : null);
     $phoneHref = \App\Domain\Settings\SiteSettings::phoneHref($phone);
+    $workingHours = $settings['contacts.working_hours'] ?: (request()->routeIs('home') ? 'Ежедневно с 9:00 до 18:00 (Мск)' : null);
 @endphp
 
 <header @class(['site-header', 'site-header--overlay' => request()->routeIs('home')]) data-site-header>
@@ -19,17 +20,19 @@
             @endforeach
         </nav>
 
-        <a class="header-home" href="{{ route('home') }}" aria-label="RelaxLand — на главную">RelaxLand</a>
+        <a class="header-home" href="{{ route('home') }}" aria-label="РелаксЛэнд — на главную">
+            <span class="header-home__monogram" aria-hidden="true">РЛ</span>
+        </a>
 
         <div class="header-contact">
-            @if ($phoneHref || $settings['contacts.working_hours'])
+            @if ($phoneHref || $workingHours)
                 <div class="header-contact__meta">
                     @if ($phoneHref)
                         <a class="header-contact__phone" href="{{ $phoneHref }}">{{ $phone }}</a>
                     @endif
 
-                    @if ($settings['contacts.working_hours'])
-                        <span class="header-contact__hours">{{ $settings['contacts.working_hours'] }}</span>
+                    @if ($workingHours)
+                        <span class="header-contact__hours">{{ $workingHours }}</span>
                     @endif
                 </div>
             @endif

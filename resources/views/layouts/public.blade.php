@@ -69,5 +69,6 @@
 
         <x-site-footer :settings="$settings" />
         <x-lead-modal />
+        <x-cookie-banner />
     </body>
 </html>

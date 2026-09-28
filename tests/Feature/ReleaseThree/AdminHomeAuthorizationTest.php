@@ -36,14 +36,21 @@ class AdminHomeAuthorizationTest extends TestCase
         $this->get('/admin/stories')->assertOk();
         $this->get('/admin/stories/create')->assertOk();
 
-        Livewire::actingAs($manager)
-            ->test(HomeContentPage::class)
+        $component = Livewire::actingAs($manager)
+            ->test(HomeContentPage::class);
+        $firstCareItem = array_key_first($component->get('data.care_items'));
+
+        $component
             ->set('data.hero_title', 'Главная из Filament')
+            ->set("data.care_items.{$firstCareItem}.title", 'Слайд из Filament')
+            ->set("data.care_items.{$firstCareItem}.text", "Первая строка\nВторая строка")
+            ->set("data.care_items.{$firstCareItem}.icon", 'heart')
             ->set('data.is_active', true)
             ->call('save')
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('home_pages', ['hero_title' => 'Главная из Filament', 'is_active' => true]);
+        $this->assertSame('Слайд из Filament', HomePage::query()->firstOrFail()->care_items[0]['title']);
     }
 
     public function test_user_without_publish_permission_cannot_activate_home_or_story(): void

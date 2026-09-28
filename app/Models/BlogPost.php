@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class BlogPost extends Model
 {
@@ -50,12 +51,30 @@ class BlogPost extends Model
         return $this->belongsTo(BlogCategory::class, 'category_id');
     }
 
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(BlogCategory::class, 'blog_post_tags');
+    }
+
+    public function scopeInRubric(Builder $query, string $slug): Builder
+    {
+        return $query->where(function (Builder $query) use ($slug): void {
+            $query->whereHas('tags', fn (Builder $tags) => $tags->active()->where('slug', $slug))
+                ->orWhere(fn (Builder $legacy) => $legacy->whereDoesntHave('tags')
+                    ->whereHas('category', fn (Builder $category) => $category->active()->where('slug', $slug)));
+        });
+    }
+
     public function scopePubliclyVisible(Builder $query): Builder
     {
         return $query
             ->where('status', BlogPostStatus::Published->value)
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now())
-            ->whereHas('category', fn (Builder $query): Builder => $query->active());
+            ->where(function (Builder $query): void {
+                $query->whereHas('tags', fn (Builder $tags) => $tags->active())
+                    ->orWhere(fn (Builder $legacy) => $legacy->whereDoesntHave('tags')
+                        ->whereHas('category', fn (Builder $category) => $category->active()));
+            });
     }
 }

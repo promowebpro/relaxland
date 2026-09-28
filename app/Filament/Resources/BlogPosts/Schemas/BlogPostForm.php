@@ -4,6 +4,7 @@ namespace App\Filament\Resources\BlogPosts\Schemas;
 
 use App\Domain\Blog\BlogPostStatus;
 use App\Domain\Users\Enums\PermissionName;
+use App\Models\BlogCategory;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\DateTimePicker;
@@ -30,9 +31,10 @@ class BlogPostForm
                 ->schema([
                     TextInput::make('title')->label('Заголовок')->required()->maxLength(255),
                     TextInput::make('slug')->label('Slug')->required()->alphaDash()->unique(ignoreRecord: true)->maxLength(255),
-                    Select::make('category_id')
-                        ->label('Категория')
-                        ->relationship('category', 'name')
+                    Select::make('tag_ids')
+                        ->label('Теги / рубрики')
+                        ->multiple()
+                        ->options(fn () => BlogCategory::query()->orderBy('sort_order')->pluck('name', 'id'))
                         ->searchable()
                         ->preload()
                         ->required(),

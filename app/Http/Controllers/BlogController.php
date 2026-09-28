@@ -29,10 +29,7 @@ class BlogController extends Controller
             ])
             ->with('category:id,name,slug')
             ->publiclyVisible()
-            ->when($category !== '', fn (Builder $query): Builder => $query->whereHas(
-                'category',
-                fn (Builder $query): Builder => $query->active()->where('slug', $category),
-            ))
+            ->when($category !== '', fn (Builder $query): Builder => $query->inRubric($category))
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $escaped = addcslashes($search, '\\%_');
 
@@ -51,7 +48,7 @@ class BlogController extends Controller
             ? $posts->orderBy('published_at')->orderBy('id')
             : $posts->orderByDesc('published_at')->orderByDesc('id');
 
-        $paginator = $posts->paginate((int) config('blog.per_page', 6))->appends(array_filter([
+        $paginator = $posts->paginate((int) config('blog.per_page', 12))->appends(array_filter([
             'category' => $category ?: null,
             'q' => $search ?: null,
             'date' => $date?->format('Y-m'),
@@ -87,7 +84,7 @@ class BlogController extends Controller
         SeoManager $seoManager,
     ): View {
         $post = BlogPost::query()
-            ->with('category:id,name,slug')
+            ->with(['category:id,name,slug', 'tags' => fn ($query) => $query->active()])
             ->publiclyVisible()
             ->where('slug', $slug)
             ->firstOrFail();

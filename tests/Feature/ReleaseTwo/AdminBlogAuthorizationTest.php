@@ -43,13 +43,14 @@ class AdminBlogAuthorizationTest extends TestCase
     {
         $editor = $this->editorWithoutPublish();
         $category = BlogCategory::factory()->create();
+        $secondTag = BlogCategory::factory()->create();
 
         Livewire::actingAs($editor)
             ->test(CreateBlogPost::class)
             ->fillForm([
                 'title' => 'Новая статья',
                 'slug' => 'new-post',
-                'category_id' => $category->id,
+                'tag_ids' => [$category->id, $secondTag->id],
                 'content' => [['type' => 'heading', 'data' => ['text' => 'Заголовок', 'level' => 2]]],
                 'status' => BlogPostStatus::Published->value,
                 'published_at' => now(),
@@ -60,6 +61,11 @@ class AdminBlogAuthorizationTest extends TestCase
         $post = BlogPost::query()->where('slug', 'new-post')->firstOrFail();
         $this->assertSame(BlogPostStatus::Draft, $post->status);
         $this->assertNull($post->published_at);
+        $this->assertEqualsCanonicalizing([$category->id, $secondTag->id], $post->tags()->pluck('blog_categories.id')->all());
+
+        Livewire::actingAs($editor)->test(EditBlogPost::class, ['record' => $post->getRouteKey()])
+            ->fillForm(['tag_ids' => [$secondTag->id]])->call('save')->assertHasNoFormErrors();
+        $this->assertSame([$secondTag->id], $post->fresh()->tags()->pluck('blog_categories.id')->all());
     }
 
     public function test_user_without_publish_permission_cannot_change_existing_publication_state(): void

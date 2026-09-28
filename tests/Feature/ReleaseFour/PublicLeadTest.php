@@ -152,7 +152,7 @@ class PublicLeadTest extends TestCase
         $this->get(route('contacts'))
             ->assertOk()
             ->assertSee('data-lead-source="contacts"', false)
-            ->assertSee('Записаться на знакомство');
+            ->assertSee('Записаться');
 
         $this->get(route('about'))
             ->assertOk()

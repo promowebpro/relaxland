@@ -8,7 +8,7 @@ class HomeContent
     private const COLLECTION_FIELDS = [
         'benefits' => ['title', 'text'],
         'life_scenarios' => ['label', 'title', 'text', 'image', 'image_mobile', 'image_alt'],
-        'care_items' => ['title', 'text'],
+        'care_items' => ['title', 'text', 'note', 'image', 'image_mobile', 'image_alt', 'image_preset', 'icon'],
         'seasons' => ['label', 'title', 'text', 'image', 'image_mobile', 'image_alt'],
         'purchase_options' => ['title', 'text'],
     ];

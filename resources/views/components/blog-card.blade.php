@@ -13,9 +13,5 @@
 
     <div class="blog-card__body">
         <h2><a href="{{ route('blog.show', $post->slug) }}">{{ $post->title }}</a></h2>
-        <div class="blog-card__meta">
-            <span>{{ $post->category->name }}</span>
-            <time datetime="{{ $post->published_at->toDateString() }}">{{ $post->published_at->translatedFormat('d F Y') }}</time>
-        </div>
     </div>
 </article>

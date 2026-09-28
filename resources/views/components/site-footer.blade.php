@@ -1,8 +1,13 @@
 @props(['settings' => []])
 
 @php
-    $phone = $settings['contacts.sales_phone'] ?: $settings['contacts.phone'];
+    $homeFallbacks = request()->routeIs('home');
+    $phone = $settings['contacts.sales_phone'] ?: $settings['contacts.phone'] ?: ($homeFallbacks ? '8 (800) 000-00-00' : null);
     $phoneHref = \App\Domain\Settings\SiteSettings::phoneHref($phone);
+    $email = $settings['contacts.email'] ?: ($homeFallbacks ? 'info@ffffff.ru' : null);
+    $workingHours = $settings['contacts.working_hours'] ?: ($homeFallbacks ? '09:00—21:00' : null);
+    $officeAddress = $settings['contacts.office_address'] ?: ($homeFallbacks ? 'Москва, 1-й проезд Поля, д. 2, стр. 3 (м. Перово)' : null);
+    $villageAddress = $settings['contacts.village_address'] ?: ($homeFallbacks ? 'Московская область, Можайский округ' : null);
     $presentationHref = $settings['documents.presentation_url'];
 
     if (! $presentationHref && $settings['documents.presentation_file']) {
@@ -44,14 +49,13 @@
                     </ul>
                     @if ($loop->first)
                         <x-button
-                            href="#lead-form"
+                            href="{{ route('genplan.index') }}"
                             variant="light"
                             class="site-footer__cta"
-                            data-lead-modal-trigger
-                            data-lead-source="footer"
-                            data-lead-form-type="callback"
-                            data-lead-heading="Заказать обратный звонок"
-                        >Позвонить мечте</x-button>
+                        ><span class="site-footer__cta-icon" aria-hidden="true">⌂</span>Выбрать участок</x-button>
+                        @if ($settings['footer.disclaimer'])
+                            <p class="site-footer__disclaimer">{!! nl2br(e($settings['footer.disclaimer'])) !!}</p>
+                        @endif
                     @endif
                 </nav>
             @endforeach
@@ -62,28 +66,20 @@
                     @if ($phone)
                         <div><dt>Телефон</dt><dd><a href="{{ $phoneHref }}">{{ $phone }}</a></dd></div>
                     @endif
-                    @if ($settings['contacts.email'])
-                        <div><dt>Email</dt><dd><a href="mailto:{{ $settings['contacts.email'] }}">{{ $settings['contacts.email'] }}</a></dd></div>
+                    @if ($email)
+                        <div><dt>Email</dt><dd><a href="mailto:{{ $email }}">{{ $email }}</a></dd></div>
                     @endif
-                    @if ($settings['contacts.working_hours'])
-                        <div><dt>Режим работы</dt><dd>{{ $settings['contacts.working_hours'] }}</dd></div>
+                    @if ($workingHours)
+                        <div><dt>Режим работы</dt><dd>{{ $workingHours }}</dd></div>
                     @endif
-                    @if ($settings['contacts.office_address'])
-                        <div><dt>Офис</dt><dd>{{ $settings['contacts.office_address'] }}</dd></div>
+                    @if ($officeAddress)
+                        <div><dt>Офис</dt><dd>{{ $officeAddress }}</dd></div>
                     @endif
-                    @if ($settings['contacts.village_address'])
-                        <div><dt>Посёлок</dt><dd>{{ $settings['contacts.village_address'] }}</dd></div>
+                    @if ($villageAddress)
+                        <div><dt>Посёлок</dt><dd>{{ $villageAddress }}</dd></div>
                     @endif
                 </dl>
             </section>
-        </div>
-
-        <div class="site-footer__socials" aria-label="Социальные сети">
-            @foreach ($socials as $label => $url)
-                @if ($url)
-                    <a href="{{ $url }}" target="_blank" rel="noopener noreferrer">{{ $label }}</a>
-                @endif
-            @endforeach
         </div>
 
         <div class="site-footer__wordmark" aria-hidden="true">
@@ -91,12 +87,16 @@
         </div>
 
         <div class="site-footer__bottom">
-            <span>{{ $settings['footer.copyright'] ?: 'RelaxLand' }}</span>
+            <div class="site-footer__socials" aria-label="Социальные сети">
+                @foreach ($socials as $label => $url)
+                    @if ($url)
+                        <a href="{{ $url }}" target="_blank" rel="noopener noreferrer">{{ $label }}</a>
+                    @endif
+                @endforeach
+            </div>
             <a href="{{ route('legal.index') }}">Политика конфиденциальности</a>
-            @if ($settings['footer.disclaimer'])
-                <p>{!! nl2br(e($settings['footer.disclaimer'])) !!}</p>
-            @endif
-            <span class="site-footer__credit">Создано с заботой</span>
+            <span>{{ $settings['footer.copyright'] ?: '© 2024–2026. РелаксЛэнд' }}</span>
+            <span class="site-footer__credit">Сайт сделали МОИ</span>
         </div>
     </div>
 </footer>

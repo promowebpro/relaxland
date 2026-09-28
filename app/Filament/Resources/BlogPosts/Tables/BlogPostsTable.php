@@ -16,7 +16,7 @@ class BlogPostsTable
             ->defaultSort('updated_at', 'desc')
             ->columns([
                 TextColumn::make('title')->label('Заголовок')->searchable()->limit(60),
-                TextColumn::make('category.name')->label('Категория')->sortable(),
+                TextColumn::make('tags.name')->label('Теги / рубрики')->badge(),
                 TextColumn::make('status')
                     ->label('Статус')
                     ->badge()
@@ -25,7 +25,7 @@ class BlogPostsTable
                 TextColumn::make('updated_at')->label('Изменена')->dateTime()->sortable(),
             ])
             ->filters([
-                SelectFilter::make('category_id')->label('Категория')->relationship('category', 'name'),
+                SelectFilter::make('tags')->label('Теги / рубрики')->relationship('tags', 'name')->multiple(),
                 SelectFilter::make('status')->label('Статус')->options(
                     collect(BlogPostStatus::cases())->mapWithKeys(
                         fn (BlogPostStatus $status): array => [$status->value => $status->label()],

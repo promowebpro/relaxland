@@ -14,7 +14,10 @@ class StoriesTable
         return $table
             ->defaultSort('sort_order')
             ->columns([
-                TextColumn::make('title')->label('Заголовок')->searchable()->limit(60),
+                TextColumn::make('title')->label('Имя')->searchable()->limit(40),
+                TextColumn::make('subtitle')->label('Подпись')->toggleable()->limit(40),
+                IconColumn::make('audio')->label('Аудио')->boolean()->getStateUsing(fn ($record) => filled($record->audio)),
+                IconColumn::make('video')->label('Видео')->boolean()->getStateUsing(fn ($record) => filled($record->video)),
                 TextColumn::make('sort_order')->label('Порядок')->sortable(),
                 IconColumn::make('is_active')->label('Опубликована')->boolean(),
                 TextColumn::make('updated_at')->label('Изменена')->dateTime()->sortable(),
