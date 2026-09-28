@@ -82,6 +82,24 @@ class PublicHomeTest extends TestCase
         $this->assertSame(['Первая история', 'Вторая история'], $response->viewData('stories')->pluck('title')->all());
     }
 
+    public function test_empty_stories_fall_back_to_design_defaults(): void
+    {
+        $response = $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Наталья')
+            ->assertSee('Бодрость')
+            ->assertSee('Артемий')
+            ->assertDontSee('Истории скоро появятся.');
+
+        $stories = $response->viewData('stories');
+        $this->assertCount(6, $stories);
+        $this->assertSame(
+            ['Наталья', 'Иван', 'Анна', 'Светлана', 'Алиса', 'Артемий'],
+            $stories->pluck('title')->all(),
+        );
+        $this->assertStringContainsString('assets/design/home-target-story-woman-dark.webp', (string) $stories->first()->imageUrl());
+    }
+
     public function test_blog_preview_contains_only_four_public_posts(): void
     {
         $category = BlogCategory::factory()->create();

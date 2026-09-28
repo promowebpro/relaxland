@@ -6280,6 +6280,7 @@ picture.home-developer__media img,
     font-size: .82rem;
     line-height: 1.08;
     text-align: center;
+    white-space: pre-line;
 }
 
 .story-audio {

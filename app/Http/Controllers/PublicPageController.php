@@ -21,10 +21,12 @@ class PublicPageController extends Controller
             $home = new HomePage(HomePage::defaultContent());
         }
 
+        $stories = Story::query()->active()->orderBy('sort_order')->orderBy('id')->limit(6)->get();
+
         return view('pages.home', [
             'home' => $home,
             'settings' => $settings,
-            'stories' => Story::query()->active()->orderBy('sort_order')->orderBy('id')->limit(6)->get(),
+            'stories' => $stories->isNotEmpty() ? $stories : Story::designDefaults(),
             'blogPosts' => BlogPost::query()
                 ->select(['id', 'category_id', 'title', 'slug', 'excerpt', 'cover_image', 'reading_time', 'status', 'published_at'])
                 ->with('category')
