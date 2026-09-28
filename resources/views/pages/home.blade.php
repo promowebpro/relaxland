@@ -3,11 +3,6 @@
     $phoneHref = \App\Domain\Settings\SiteSettings::phoneHref($phone);
     $ogPath = $home->og_image ?: $home->hero_image;
     $ogImage = $ogPath ? Storage::disk('public')->url($ogPath) : '';
-    $routeLinks = collect([
-        'Яндекс' => $settings['routes.yandex'],
-        'Гугл' => $settings['routes.google'],
-        '2Гис' => $settings['routes.two_gis'],
-    ])->filter();
     $rhythmPresets = [
         ['slot' => 'morning', 'phase' => 'opening', 'label' => 'Утро', 'title' => 'Пробежка по лесу, воркаут и йога на траве', 'image_alt' => 'Пробежка по лесу', 'fallback' => 'assets/design/home-target-runners.webp', 'animal' => 'assets/design/home-rhythm-rabbit.svg'],
         ['slot' => 'coworking', 'phase' => 'opening', 'label' => 'День', 'title' => 'Работа из коворкинга, с оптоволоконным интернетом', 'image_alt' => 'Работа в коворкинге', 'fallback' => 'assets/design/home-target-coworking.webp', 'animal' => 'assets/design/home-rhythm-hedgehog.svg'],
@@ -420,36 +415,7 @@
         </div>
     </section>
 
-    <section class="home-section home-visit" id="visit" aria-labelledby="home-visit-title">
-        <div class="site-container">
-            <div class="home-visit__map">
-                <div class="home-visit__map-canvas" tabindex="0" aria-label="Интерактивная карта: перетаскивайте её и используйте колесо мыши для масштаба" data-home-map>
-                    <img class="home-visit__map-image" src="{{ asset('assets/design/home-target-map.webp') }}" alt="Карта маршрута" loading="lazy" draggable="false" data-home-map-image>
-                    <div class="home-visit__map-controls" aria-label="Управление картой">
-                        <button type="button" aria-label="Увеличить масштаб" data-home-map-zoom-in>+</button>
-                        <button type="button" aria-label="Уменьшить масштаб" data-home-map-zoom-out>−</button>
-                        <button type="button" aria-label="Сбросить положение карты" data-home-map-reset>⟳</button>
-                    </div>
-                </div>
-                <span class="sr-only" aria-live="polite" data-home-map-status></span>
-                <img class="home-visit__mascot" src="{{ asset('assets/design/home-target-mascot-map-hedgehog.png') }}" alt="" loading="lazy">
-                <article class="home-visit__invite">
-                    <h2 id="home-visit-title">Приглашаем<br>протестировать<br><em>лучшую жизнь</em></h2>
-                    <p>Приезжайте с детьми, друзьями, домашними питомцами и отдохните, как следует. Познакомитесь с будущими соседями, осмотритесь и влюбитесь в это место</p>
-                    <div class="home-visit__chips"><span>Барбекю</span><span>Свежий воздух</span><span>Лес</span><span>Новые знакомства</span></div>
-                    <x-button href="#lead-form" variant="primary" data-lead-modal-trigger data-lead-source="home" data-lead-form-type="visit" data-lead-heading="Записаться на экскурсию">Экскурсия</x-button>
-                </article>
-                <article class="home-visit__route">
-                    <h3>Построить маршрут</h3>
-                    @if ($routeLinks->isNotEmpty())
-                        <nav aria-label="Построить маршрут">@foreach ($routeLinks as $label => $url)<a href="{{ $url }}" target="_blank" rel="noopener noreferrer">{{ $label }}</a>@endforeach</nav>
-                    @endif
-                    <p><strong>🚙 На автомобиле</strong><small>80 минут от МКАД<br>по скоростному шоссе</small></p>
-                    @if ($settings['contacts.village_address'])<p><strong>● Координаты посёлка</strong><small>{{ $settings['contacts.village_address'] }}</small></p>@endif
-                </article>
-            </div>
-        </div>
-    </section>
+    <x-visit-map :content="$visitContent" source="home" id="visit" />
 
     <section class="home-section home-developer" aria-labelledby="home-developer-title">
         <div class="site-container home-developer__layout">

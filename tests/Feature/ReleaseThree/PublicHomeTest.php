@@ -55,15 +55,16 @@ class PublicHomeTest extends TestCase
             ->assertDontSee('Скрытая версия главной');
     }
 
-    public function test_visit_section_contains_provider_independent_interactive_map_controls(): void
+    public function test_visit_section_reuses_shared_about_map_block(): void
     {
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('data-home-map', false)
-            ->assertSee('class="home-visit__map-image"', false)
-            ->assertSee('data-home-map-zoom-in', false)
-            ->assertSee('data-home-map-zoom-out', false)
-            ->assertSee('data-home-map-reset', false)
+            ->assertSee('id="visit"', false)
+            ->assertSee('data-about-map', false)
+            ->assertSee('data-about-map-status', false)
+            ->assertSee('about-location__frame', false)
+            ->assertDontSee('data-home-map', false)
+            ->assertDontSee('home-target-map.webp', false)
             ->assertDontSee('map-widget', false)
             ->assertDontSee('apikey', false);
     }

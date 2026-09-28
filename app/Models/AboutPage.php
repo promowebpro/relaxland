@@ -19,6 +19,30 @@ class AboutPage extends Model
         return array_replace(self::defaults(), self::query()->first()?->content ?? []);
     }
 
+    /**
+     * Shared visit/map block content for about, contacts, and home.
+     * Optional site settings override coordinates, travel text, and route links.
+     */
+    public static function visitContent(array $settings = []): array
+    {
+        $content = self::pageContent();
+
+        foreach ([
+            'map_latitude' => 'contacts.village_latitude',
+            'map_longitude' => 'contacts.village_longitude',
+            'travel_text' => 'contacts.travel_time',
+            'route_yandex' => 'routes.yandex',
+            'route_google' => 'routes.google',
+            'route_two_gis' => 'routes.two_gis',
+        ] as $field => $setting) {
+            if (filled($settings[$setting] ?? null)) {
+                $content[$field] = $settings[$setting];
+            }
+        }
+
+        return $content;
+    }
+
     public static function imageUrl(?string $path): string
     {
         if (! $path || str_contains($path, '..')) {
